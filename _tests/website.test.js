@@ -8,6 +8,8 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const { JSDOM } = require('jsdom');
+// E-Mail kodiert, wie in src/data/site.ts (für die Prüfung der Suche)
+const siteEmailB64 = fs.readFileSync(path.join(__dirname, '..', 'src', 'data', 'site.ts'), 'utf8').match(/emailB64: '([^']+)'/)[1];
 
 const ROOT = path.join(__dirname, '..');
 // Besucherstatistik, gleiche Zeile wie src/components/Umami.astro und in den Tools unter public/tools/
@@ -55,6 +57,26 @@ function common(label, out) {
     for (const m of html.matchAll(/(?:href|src)="(\/[^"]*)"/g)) {
       if (m[1].startsWith('//')) continue;
       ok(`${label}: Link vorhanden: ${m[1]} (in ${p})`, exists(m[1]));
+    }
+  }
+  // Suche (src/components/Search.astro): Index pro Sprache, alle Ziele vorhanden, Abschnitte mit passender id
+  for (const [p, en] of [['index.html', false], ['en/index.html', true]]) {
+    const doc = s.doc(p);
+    const el = doc.getElementById('search-index');
+    let entries = [];
+    try { entries = JSON.parse(el ? el.textContent : ''); } catch (e) { /* unten als Fehler gemeldet */ }
+    ok(`${label}: Suche hat einen Index (${p})`, entries.length > 0 && !!doc.querySelector('dialog.search') && !!doc.querySelector('.search-button[hidden]'));
+    const acts = ['copy-link', 'cv-pdf', 'theme-light', 'theme-dark', 'theme-system', 'mail', 'copy-mail'];
+    ok(`${label}: Suche hat alle Schnellaktionen, zuoberst (${p})`, acts.every((x, i) => entries[i] && entries[i].a === x));
+    const dlg = doc.querySelector('dialog.search');
+    ok(`${label}: Suche kennt die E-Mail nur kodiert (${p})`, !!dlg && dlg.dataset.mail === siteEmailB64 && !dlg.outerHTML.includes('@'));
+    for (const e of entries) {
+      if (e.a) { ok(`${label}: Schnellaktion ohne Adresse: ${e.a} (${p})`, typeof e.t === 'string' && e.t && !e.u); continue; }
+      if (e.x) { ok(`${label}: Externer Link aus site.ts: ${e.u} (${p})`, /^https:\/\/(www\.linkedin\.com|github\.com)\//.test(e.u)); continue; }
+      ok(`${label}: Suchziel vorhanden: ${e.u} (${p})`, typeof e.t === 'string' && e.t && exists(e.u));
+      const hash = e.u.split('#')[1];
+      if (hash) ok(`${label}: Suchziel-Abschnitt #${hash} vorhanden (${p})`, !!doc.getElementById(hash));
+      if (!e.u.startsWith('/tools/')) ok(`${label}: Suchziel in der Sprache der Seite: ${e.u} (${p})`, e.u.startsWith('/en/') === en);
     }
   }
   for (const f of ['feed.xml', 'en/feed.xml', 'sitemap.xml']) {
@@ -177,6 +199,13 @@ try {
   ok('Event: Lebenslauf als PDF', ['cv.html', 'en/cv.html'].every(p => a.read(p).includes('data-umami-event="Lebenslauf als PDF"')));
   ok('Event: Übergabe ans Balken-Tool', a.read('tools/lastkombinationen/index.html').includes('window.umami.track("Ins Balken-Tool übernommen")'));
   ok('Datenschutz: E-Mail kodiert eingebunden', ['datenschutz.html', 'en/privacy.html'].every(p => a.read(p).includes('<a class="email"></a>')));
+  // 10. Blogbeiträge: Zwischentitel mit id (für die # zum Kopieren des Abschnitt-Links, src/layouts/Post.astro)
+  for (const p of builtA.filter(p => /^(en\/)?blog\/[^/]+\/index\.html$/.test(p))) {
+    const doc = a.doc(p);
+    const art = doc.querySelector('article[data-heading-link]');
+    const hs = [...doc.querySelectorAll('article h2, article h3, article h4')];
+    ok('Beitrag: Zwischentitel mit id und Texte für # (' + p + ')', !!art && hs.every(h => h.id) && !doc.querySelector('.heading-anchor'));
+  }
   ok('Datenschutz: in der Sitemap', ['/datenschutz', '/en/privacy'].every(u => locsA.includes('https://josija-nydegger.ch' + u)));
 } catch (e) { ok('A: Prüfung ohne Absturz', false, e.message); }
 

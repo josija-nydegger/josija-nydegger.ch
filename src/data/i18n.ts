@@ -22,6 +22,7 @@ export const i18n = {
     readingTime: 'Min. Lesezeit',
     postNav: 'Weitere Beiträge',
     prevPost: 'Vorheriger Beitrag',
+    headingLink: 'Link zu diesem Abschnitt kopieren',
     nextPost: 'Nächster Beitrag',
     // Hell / Dunkel / System
     themeLabel: 'Farbschema',
@@ -30,7 +31,21 @@ export const i18n = {
     themeSystem: 'System',
     // Fusszeile
     privacy: 'Datenschutz',
-    privacyUrl: '/datenschutz'
+    privacyUrl: '/datenschutz',
+    // Suche (src/components/Search.astro)
+    search: 'Suchen',
+    searchPlaceholder: 'Seiten, Tools und Beiträge durchsuchen',
+    searchEmpty: 'Nichts gefunden. Versuch einen anderen Begriff, zum Beispiel «Balken» oder «SIA».',
+    searchHelpOpen: 'öffnen',
+    searchHelpMove: 'auswählen',
+    searchHelpClose: 'schliessen',
+    kindPage: 'Seite',
+    kindSection: 'Abschnitt',
+    kindTool: 'Tool',
+    kindPost: 'Beitrag',
+    kindAction: 'Aktion',
+    copied: 'Kopiert',
+    copyFailed: 'Kopieren nicht möglich'
   },
   en: {
     name: 'English',
@@ -49,6 +64,7 @@ export const i18n = {
     readingTime: 'min read',
     postNav: 'More posts',
     prevPost: 'Previous post',
+    headingLink: 'Copy link to this section',
     nextPost: 'Next post',
     // Light / Dark / System
     themeLabel: 'Color scheme',
@@ -57,7 +73,21 @@ export const i18n = {
     themeSystem: 'System',
     // Footer
     privacy: 'Privacy',
-    privacyUrl: '/en/privacy'
+    privacyUrl: '/en/privacy',
+    // Search (src/components/Search.astro)
+    search: 'Search',
+    searchPlaceholder: 'Search pages, tools and posts',
+    searchEmpty: 'No results. Try another term, such as “beam” or “SIA”.',
+    searchHelpOpen: 'open',
+    searchHelpMove: 'select',
+    searchHelpClose: 'close',
+    kindPage: 'Page',
+    kindSection: 'Section',
+    kindTool: 'Tool',
+    kindPost: 'Post',
+    kindAction: 'Action',
+    copied: 'Copied',
+    copyFailed: 'Copying not possible'
   }
 } as const satisfies Record<Lang, Record<string, string>>;
 

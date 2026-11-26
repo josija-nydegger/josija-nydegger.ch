@@ -5,6 +5,7 @@ import Nav from '../components/Nav.astro';
 import Seo from '../components/Seo.astro';
 import PersonJsonLd from '../components/PersonJsonLd.astro';
 import Umami from '../components/Umami.astro';
+import Search from '../components/Search.astro';
 import { i18n, otherLang, type Lang } from '../data/i18n';
 import { site, absoluteUrl, pagePath } from '../data/site';
 import { counterpartUrl, type Post } from '../lib/posts';
@@ -54,11 +55,17 @@ const deUrl = lang === 'de' ? path : otherUrl;
 <body>
 <main>
   <Nav lang={lang} ref={ref} isPost={!!post} />
-  <nav class="lang" aria-label={t.langLabel}>
-    {lang === 'de'
-      ? <><span aria-current="true">DE</span> | <a href={switchUrl} hreflang="en" lang="en" title={tOther.name}>EN</a></>
-      : <><a href={switchUrl} hreflang="de" lang="de" title={tOther.name}>DE</a> | <span aria-current="true">EN</span></>}
-  </nav>
+  <div class="top-right">
+    <button type="button" class="search-button" aria-label={t.search} aria-keyshortcuts="Control+K Meta+K" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <span class="search-label">{t.search}</span><kbd>Ctrl K</kbd>
+    </button>
+    <nav class="lang" aria-label={t.langLabel}>
+      {lang === 'de'
+        ? <><span aria-current="true">DE</span> | <a href={switchUrl} hreflang="en" lang="en" title={tOther.name}>EN</a></>
+        : <><a href={switchUrl} hreflang="de" lang="de" title={tOther.name}>DE</a> | <span aria-current="true">EN</span></>}
+    </nav>
+  </div>
 
   <slot />
 
@@ -77,6 +84,7 @@ const deUrl = lang === 'de' ? path : otherUrl;
     </div>
   </footer>
 </main>
+<Search lang={lang} />
 <script is:inline define:vars={{ emailB64: site.emailB64 }}>
   // Hell / Dunkel / System: Auswahl wird im Browser gespeichert, "System" folgt der Geräteeinstellung.
   (function () {
@@ -124,6 +132,11 @@ const deUrl = lang === 'de' ? path : otherUrl;
     window.addEventListener("afterprint", function () { document.title = title; });
     button.addEventListener("click", function () { window.print(); });
     button.hidden = false;
+    // Aus der Suche ("Lebenslauf als PDF speichern"): /cv#pdf öffnet den Druckdialog direkt
+    if (location.hash === "#pdf") {
+      history.replaceState(null, "", location.pathname);
+      window.addEventListener("load", function () { setTimeout(function () { window.print(); }, 100); });
+    }
   })();
 </script>
 </body>

@@ -70,7 +70,7 @@ src/
   data/tools.ts      Tool list for /tools/ and /en/tools/ (title, description, tags in DE and EN)
   layouts/Base.astro Shared layout: <head>, hreflang, menu, language switch, footer, inline scripts
   layouts/Post.astro Blog post layout (date, reading time, older/newer)
-  components/        Nav, Seo (title, link preview, JSON-LD), BlogList (3 newest on the home page), PersonJsonLd, Umami
+  components/        Nav, Seo (title, link preview, JSON-LD), BlogList (3 newest on the home page), PersonJsonLd, Umami, Search (Ctrl/⌘ K palette, see "Menu")
   lib/posts.ts       Posts: date/language/URL from the file name, reading time, older/newer, counterpart, postUrl()
   lib/feed.ts        Atom feeds
   lib/einheiten.ts   Calculation core of the unit converter (pure TypeScript functions)
@@ -116,7 +116,7 @@ Only what Astro builds from `src/pages/` plus the contents of `public/` is publi
 - Required front matter (the build stops with a message otherwise): `title`, `description` (one sentence for blog overview and link preview), `ref` (short id). Optional: `image` (own link preview with large image, ideally 1200×630), `tags: [A, B]` (shown in the blog overview), `last_modified_at` (feed and sitemap), `slug`, `date`, `published: false`. Template: `_drafts/vorlage.md`.
 - English translation: `src/content/blog/en/YYYY-MM-DD-english-title.md` with the **same `ref`**. Without a counterpart, the language switch leads to the other language's blog overview.
 - Posts dated in the future appear with the first build on or after that day (next push to `main`, or run the Action manually).
-- The layout adds reading time (~200 words/minute) and links to the older/newer post in the same language.
+- The layout adds reading time (~200 words/minute), links to the older/newer post in the same language, and a grey `#` left of every h2–h4, in the page margin (visible on hover; click sets the URL to the heading and copies it, without a message; on touch devices no `#`, tapping the heading jumps to it; added by a script, so not in feeds or without JavaScript). Heading ids come from Astro.
 - Blog overview `/blog/` and `/en/blog/`: all posts of the language, newest first, with description and tags (built like `/tools/`). The home page shows only the 3 newest (title and date, `BlogList.astro`) with "Alle Beiträge →".
 - Images with fixed width as HTML: `<img src="/images/blog/bild.png" alt="…" width="480" loading="lazy">`. Images go to `public/images/blog/`.
 - Link from a project on the home page to a post: `postUrl(ref, lang)` from `src/lib/posts.ts`, and show the tag only once the post is published (see QR-tool), otherwise the link test fails before the publication date.
@@ -135,6 +135,7 @@ Only what Astro builds from `src/pages/` plus the contents of `public/` is publi
 
 ### Menu
 - Top left on all pages with the `Base` layout: Start (EN: Home) · CV · Tools · Blog, language switch on the right. Active item via `ref` (`home`, `cv`, `tools`, `blog`) or blog post.
+- **Search** (`src/components/Search.astro`): field "Suchen"/"Search" left of the language switch, opens with a click, Ctrl/⌘ K or `/`. The index (pages, home sections, tools, posts of the page's language) is written into each page at build time; searching runs only in the browser, nothing is sent. New pages or home sections that should be findable go into the `pages` list there. Quick actions (listed first): copy page link, save CV as PDF (`/cv#pdf` opens the print dialog), light/dark/system (clicks the footer buttons), write/copy email (from `emailB64`), LinkedIn/GitHub; no Umami events. Hidden without JavaScript.
 - New main pages get their own `ref` in `src/data/pages.ts` and, if they belong in the menu, an entry in `src/components/Nav.astro` (both languages). The CV has no back button; the menu replaces it.
 
 ### CV and structured data
