@@ -11,7 +11,9 @@ const REMOVED = ['assets/katex/katex.min.js', 'assets/katex/contrib/auto-render.
 
 let fails = 0;
 const ok = (name, cond, info) => { if (!cond) fails++; console.log((cond ? 'OK  ' : 'FAIL') + ' ' + name + (cond || info === undefined ? '' : ': ' + info)); };
-const get = (url, opts = {}) => fetch(url, { redirect: 'manual', ...opts });
+// Wie ein Browser anfragen: Cloudflare behandelt Seitenaufrufe (Sec-Fetch-Mode: navigate) anders als andere Anfragen
+const BROWSER = { 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document', 'Accept': 'text/html,*/*' };
+const get = (url, opts = {}) => fetch(url, { redirect: 'manual', headers: BROWSER, ...opts });
 
 (async () => {
   const rows = fs.readFileSync(path.join(__dirname, 'referenz', 'dateien.txt'), 'utf8').split('\n').filter(l => l && !l.startsWith('#')).map(l => l.split('\t'));
