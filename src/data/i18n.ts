@@ -22,6 +22,7 @@ export const i18n = {
     readingTime: 'Min. Lesezeit',
     postNav: 'Weitere Beiträge',
     prevPost: 'Vorheriger Beitrag',
+    headingLink: 'Link zu diesem Abschnitt kopieren',
     nextPost: 'Nächster Beitrag',
     // Hell / Dunkel / System
     themeLabel: 'Farbschema',
@@ -63,6 +64,7 @@ export const i18n = {
     readingTime: 'min read',
     postNav: 'More posts',
     prevPost: 'Previous post',
+    headingLink: 'Copy link to this section',
     nextPost: 'Next post',
     // Light / Dark / System
     themeLabel: 'Color scheme',

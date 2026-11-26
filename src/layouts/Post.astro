@@ -1,6 +1,7 @@
 ---
 // Layout für Blogbeiträge (baut auf Base auf).
 // Zeigt Datum, Lesezeit und Links zum älteren/neueren Beitrag derselben Sprache.
+// Zwischentitel bekommen ein graues # (sichtbar beim Darüberfahren), das den Link zum Abschnitt kopiert.
 import Base from './Base.astro';
 import { i18n, formatDate } from '../data/i18n';
 import { getPosts, neighbours, readingTime, type Post } from '../lib/posts';
@@ -20,7 +21,7 @@ const { older, newer } = neighbours(await getPosts(post.lang), post);
 
   <a class="back" href={t.blogUrl}>← {t.allPosts}</a>
 
-  <article>
+  <article data-heading-link={t.headingLink} data-copied={t.copied}>
     <h1>{post.title}</h1>
     <div class="date">{formatDate(post.date, post.lang)} · {minutes} {t.readingTime}</div>
     <slot />
@@ -33,3 +34,33 @@ const { older, newer } = neighbours(await getPosts(post.lang), post);
     </nav>
   )}
 </Base>
+
+<script>
+  // Zwischentitel (mit id aus dem Markdown) bekommen ein # am Ende. Klick: Adresse auf den Abschnitt setzen und kopieren.
+  // Ohne JavaScript gibt es kein #, die ids (und damit Links auf Abschnitte) funktionieren trotzdem.
+  const article = document.querySelector<HTMLElement>('article[data-heading-link]');
+  if (article) {
+    const label = article.dataset.headingLink ?? '';
+    const copied = article.dataset.copied ?? '';
+    article.querySelectorAll<HTMLElement>('h2[id], h3[id], h4[id]').forEach(h => {
+      const a = document.createElement('a');
+      a.className = 'heading-anchor';
+      a.href = '#' + encodeURIComponent(h.id);
+      a.textContent = '#';
+      a.setAttribute('aria-label', label);
+      a.title = label;
+      a.addEventListener('click', async e => {
+        e.preventDefault();
+        const url = location.origin + location.pathname + a.getAttribute('href');
+        history.replaceState(null, '', a.getAttribute('href'));
+        h.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        try {
+          await navigator.clipboard.writeText(url);
+          a.dataset.done = copied + ' ✓';
+          setTimeout(() => delete a.dataset.done, 1500);
+        } catch { /* Adresse steht trotzdem in der Adresszeile */ }
+      });
+      h.append(' ', a);
+    });
+  }
+</script>

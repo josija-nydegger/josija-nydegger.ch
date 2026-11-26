@@ -111,6 +111,16 @@ a.item:hover .item-title { text-decoration: underline; text-underline-offset: 3p
 article h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; }
 article .date { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
 article h2 { font-size: 18px; margin-top: 32px; }
+/* Graues # an Zwischentiteln (src/layouts/Post.astro): sichtbar beim Darüberfahren, auf Touch-Geräten immer schwach */
+.heading-anchor { position: relative; color: var(--muted); font-weight: 400; text-decoration: none; opacity: 0; }
+article :is(h2, h3, h4):hover .heading-anchor, .heading-anchor:focus-visible, .heading-anchor[data-done] { opacity: 1; }
+.heading-anchor:hover { color: var(--text); }
+@media (hover: none) { .heading-anchor { opacity: 0.5; } }
+/* Rückmeldung "Kopiert ✓" über dem # (darüber statt daneben, damit nichts über den Rand ragt) */
+.heading-anchor[data-done]::after {
+  content: attr(data-done); position: absolute; bottom: 100%; right: 0; margin-bottom: 4px;
+  padding: 1px 6px; font-size: 12px; white-space: nowrap; color: var(--muted); background: var(--tag-bg); border-radius: 4px;
+}
 article img { max-width: 100%; border-radius: 8px; }
 article pre { background: var(--tag-bg); padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
 article code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
@@ -257,7 +267,7 @@ footer a { color: var(--muted); }
   }
   body { font-size: 10.5pt; line-height: 1.45; }
   main { max-width: none; padding: 0; }
-  .back, .socials, .top-right, .nav, .print-button, footer, dialog.search { display: none !important; }
+  .back, .socials, .top-right, .nav, .print-button, footer, dialog.search, .heading-anchor { display: none !important; }
   .header { margin-bottom: 12pt; }
   section { margin-top: 16pt; }
   h2 { break-after: avoid; margin-bottom: 6pt; }

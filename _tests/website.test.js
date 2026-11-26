@@ -199,6 +199,13 @@ try {
   ok('Event: Lebenslauf als PDF', ['cv.html', 'en/cv.html'].every(p => a.read(p).includes('data-umami-event="Lebenslauf als PDF"')));
   ok('Event: Übergabe ans Balken-Tool', a.read('tools/lastkombinationen/index.html').includes('window.umami.track("Ins Balken-Tool übernommen")'));
   ok('Datenschutz: E-Mail kodiert eingebunden', ['datenschutz.html', 'en/privacy.html'].every(p => a.read(p).includes('<a class="email"></a>')));
+  // 10. Blogbeiträge: Zwischentitel mit id (für die # zum Kopieren des Abschnitt-Links, src/layouts/Post.astro)
+  for (const p of builtA.filter(p => /^(en\/)?blog\/[^/]+\/index\.html$/.test(p))) {
+    const doc = a.doc(p);
+    const art = doc.querySelector('article[data-heading-link][data-copied]');
+    const hs = [...doc.querySelectorAll('article h2, article h3, article h4')];
+    ok('Beitrag: Zwischentitel mit id und Texte für # (' + p + ')', !!art && hs.every(h => h.id) && !doc.querySelector('.heading-anchor'));
+  }
   ok('Datenschutz: in der Sitemap', ['/datenschutz', '/en/privacy'].every(u => locsA.includes('https://josija-nydegger.ch' + u)));
 } catch (e) { ok('A: Prüfung ohne Absturz', false, e.message); }
 
