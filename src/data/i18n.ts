@@ -30,7 +30,18 @@ export const i18n = {
     themeSystem: 'System',
     // Fusszeile
     privacy: 'Datenschutz',
-    privacyUrl: '/datenschutz'
+    privacyUrl: '/datenschutz',
+    // Suche (src/components/Search.astro)
+    search: 'Suchen',
+    searchPlaceholder: 'Seiten, Tools und Beiträge durchsuchen',
+    searchEmpty: 'Nichts gefunden. Versuch einen anderen Begriff, zum Beispiel «Balken» oder «SIA».',
+    searchHelpOpen: 'öffnen',
+    searchHelpMove: 'auswählen',
+    searchHelpClose: 'schliessen',
+    kindPage: 'Seite',
+    kindSection: 'Abschnitt',
+    kindTool: 'Tool',
+    kindPost: 'Beitrag'
   },
   en: {
     name: 'English',
@@ -57,7 +68,18 @@ export const i18n = {
     themeSystem: 'System',
     // Footer
     privacy: 'Privacy',
-    privacyUrl: '/en/privacy'
+    privacyUrl: '/en/privacy',
+    // Search (src/components/Search.astro)
+    search: 'Search',
+    searchPlaceholder: 'Search pages, tools and posts',
+    searchEmpty: 'No results. Try another term, such as “beam” or “SIA”.',
+    searchHelpOpen: 'open',
+    searchHelpMove: 'select',
+    searchHelpClose: 'close',
+    kindPage: 'Page',
+    kindSection: 'Section',
+    kindTool: 'Tool',
+    kindPost: 'Post'
   }
 } as const satisfies Record<Lang, Record<string, string>>;
 

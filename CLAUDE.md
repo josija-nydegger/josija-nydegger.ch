@@ -70,7 +70,7 @@ src/
   data/tools.ts      Tool list for /tools/ and /en/tools/ (title, description, tags in DE and EN)
   layouts/Base.astro Shared layout: <head>, hreflang, menu, language switch, footer, inline scripts
   layouts/Post.astro Blog post layout (date, reading time, older/newer)
-  components/        Nav, Seo (title, link preview, JSON-LD), BlogList (3 newest on the home page), PersonJsonLd, Umami
+  components/        Nav, Seo (title, link preview, JSON-LD), BlogList (3 newest on the home page), PersonJsonLd, Umami, Search (Ctrl/⌘ K palette, see "Menu")
   lib/posts.ts       Posts: date/language/URL from the file name, reading time, older/newer, counterpart, postUrl()
   lib/feed.ts        Atom feeds
   lib/einheiten.ts   Calculation core of the unit converter (pure TypeScript functions)
@@ -135,6 +135,7 @@ Only what Astro builds from `src/pages/` plus the contents of `public/` is publi
 
 ### Menu
 - Top left on all pages with the `Base` layout: Start (EN: Home) · CV · Tools · Blog, language switch on the right. Active item via `ref` (`home`, `cv`, `tools`, `blog`) or blog post.
+- **Search** (`src/components/Search.astro`): field "Suchen"/"Search" left of the language switch, opens with a click, Ctrl/⌘ K or `/`. The index (pages, home sections, tools, posts of the page's language) is written into each page at build time; searching runs only in the browser, nothing is sent. New pages or home sections that should be findable go into the `pages` list there. Hidden without JavaScript.
 - New main pages get their own `ref` in `src/data/pages.ts` and, if they belong in the menu, an entry in `src/components/Nav.astro` (both languages). The CV has no back button; the menu replaces it.
 
 ### CV and structured data

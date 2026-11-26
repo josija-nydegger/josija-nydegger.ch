@@ -57,6 +57,20 @@ function common(label, out) {
       ok(`${label}: Link vorhanden: ${m[1]} (in ${p})`, exists(m[1]));
     }
   }
+  // Suche (src/components/Search.astro): Index pro Sprache, alle Ziele vorhanden, Abschnitte mit passender id
+  for (const [p, en] of [['index.html', false], ['en/index.html', true]]) {
+    const doc = s.doc(p);
+    const el = doc.getElementById('search-index');
+    let entries = [];
+    try { entries = JSON.parse(el ? el.textContent : ''); } catch (e) { /* unten als Fehler gemeldet */ }
+    ok(`${label}: Suche hat einen Index (${p})`, entries.length > 0 && !!doc.querySelector('dialog.search') && !!doc.querySelector('.search-button[hidden]'));
+    for (const e of entries) {
+      ok(`${label}: Suchziel vorhanden: ${e.u} (${p})`, typeof e.t === 'string' && e.t && exists(e.u));
+      const hash = e.u.split('#')[1];
+      if (hash) ok(`${label}: Suchziel-Abschnitt #${hash} vorhanden (${p})`, !!doc.getElementById(hash));
+      if (!e.u.startsWith('/tools/')) ok(`${label}: Suchziel in der Sprache der Seite: ${e.u} (${p})`, e.u.startsWith('/en/') === en);
+    }
+  }
   for (const f of ['feed.xml', 'en/feed.xml', 'sitemap.xml']) {
     ok(`${label}: ${f} beginnt mit XML-Deklaration`, s.has(f) && s.read(f).startsWith('<?xml'));
     ok(`${label}: ${f} ist gültiges XML`, s.has(f) && !s.xml(f).querySelector('parsererror'));
