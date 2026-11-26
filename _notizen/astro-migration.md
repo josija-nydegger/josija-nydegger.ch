@@ -2,7 +2,7 @@
 
 **Abgeschlossen am 27.10.2026.** Die Website läuft seither mit Astro 7. Diese Notiz hält Ablauf, Befunde und Entscheide fest; die aktuelle Arbeitsweise steht in `CLAUDE.md`.
 
-**Nachtrag 26.11.2026: Hosting von GitHub Pages zu Cloudflare Workers** (PR #10, #11; aktueller Stand in `CLAUDE.md`, Abschnitte "Domain" und "Cloudflare"):
+**Nachtrag 26.11.2026: Hosting von GitHub Pages zu Cloudflare Workers** (PR #10, #11; aktueller Stand in `_docs/hosting.md`):
 - Ablauf: Zone bei Cloudflare angelegt, E-Mail-Einträge (MX, SPF, DKIM, DMARC, SRV, autoconfig) übernommen, Worker mit Custom Domain veröffentlicht; dann DNSSEC bei Infomaniak aus, gewartet bis der DS-Eintrag bei der .ch-Registry weg war (plus 1 h TTL), Nameserver auf Cloudflare umgestellt, DNSSEC bei Cloudflare ein und DS-Eintrag bei Infomaniak eingetragen. Ohne Ausfall von Website und E-Mail.
 - Befund 1: GitHub Pages lieferte auch das Repo QR-tool unter der Domain aus (`/QR-tool/…`). Nach dem Umzug 404, jetzt als Kopie in `public/QR-tool/`. Vor einem Umzug alle Repos mit Pages prüfen (`gh repo list --json name,hasPages`).
 - Befund 2: Mit `not_found_handling: "404-page"` gaben `/`, `/tools/` usw. im Browser 404, mit curl aber 200. Cloudflare beantwortet Seitenaufrufe (`Sec-Fetch-Mode: navigate`) dann selbst, ohne den Worker. Darum `"none"`; die Live-Prüfung fragt seither wie ein Browser an.

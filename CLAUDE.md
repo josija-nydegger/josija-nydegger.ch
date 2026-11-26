@@ -1,180 +1,178 @@
 # CLAUDE.md
 
-Persönliche Website von Josija Nydegger (Bauingenieurwesen, BIM, Digital Construction).
-Live: <https://josija-nydegger.ch> · gebaut mit [Astro](https://astro.build) (statisch), veröffentlicht per GitHub Action auf Cloudflare Workers (statische Dateien, seit November 2026; vorher GitHub Pages). Bis Oktober 2026 Jekyll; Ablauf und Entscheide des Wechsels: `_notizen/astro-migration.md`.
+Personal website of Josija Nydegger (civil engineering, BIM, digital construction).
+Live: <https://josija-nydegger.ch> · static site built with [Astro](https://astro.build), deployed by a GitHub Action to Cloudflare Workers (static assets only). Repo: `josija-nydegger/josija-nydegger.ch`.
 
-**Domain:** `josija-nydegger.ch`, registriert bei Infomaniak. DNS seit November 2026 bei Cloudflare (Nameserver `jerome.ns.cloudflare.com` und `keyla.ns.cloudflare.com` bei Infomaniak eingetragen; DNSSEC bei Cloudflare, DS-Eintrag bei Infomaniak). Die Domain ist eine Custom Domain des Workers `josija-nydegger` (`routes` in `wrangler.jsonc`); `www` leitet eine Redirect-Regel der Zone (Rules → Redirect Rules) mit 301 auf die Domain ohne www um (`www` dafür als proxied AAAA `100::`), "Always Use HTTPS" ist an. Die übrigen Einträge (MX, SPF, DKIM, DMARC, SRV, autoconfig) sind für E-Mail bei Infomaniak und bleiben. Repo `josija-nydegger/josija-nydegger.ch` (bis November 2026 `josija-nydegger.github.io`; GitHub leitet die alte Repo-Adresse weiter). GitHub Pages ist hier und im Repo QR-tool ausgeschaltet; Adressen unter `josija-nydegger.github.io` gibt es nicht mehr. Absolute Adressen immer mit `https://josija-nydegger.ch` schreiben (bzw. `absoluteUrl()` aus `src/data/site.ts`). Falls die DNS-Verwaltung je umzieht: DNSSEC vorher ausschalten.
+Read the reference docs when a task touches their topic:
 
-**Cloudflare:** `wrangler.jsonc` veröffentlicht `dist/` als Workers Static Assets, **ohne eigenen Worker-Code** (kein `main`). Cloudflare regelt die Adressen selbst (`html_handling: "auto-trailing-slash"`): `cv.html` erscheint unter `/cv` (`/cv.html` → `/cv`), `ordner/index.html` unter `/ordner/` (`/ordner` und `/ordner/index.html` → `/ordner/`, je 307); unbekannte Adressen bekommen `404.html` mit Status 404 (`not_found_handling: "404-page"`). Die früheren Adressen mit `.html` (bis November 2026) leitet `public/_redirects` dauerhaft (301) weiter; neue Seiten brauchen dort keinen Eintrag. Die GitHub Action veröffentlicht mit `npx wrangler deploy` (Repo-Secrets `CLOUDFLARE_API_TOKEN` und `CLOUDFLARE_ACCOUNT_ID`). Lokal wie live testen: `npm run build`, dann `npx wrangler dev`; mit curl `-H "Sec-Fetch-Mode: navigate"` mitschicken, weil Cloudflare Seitenaufrufe von Browsern teils anders behandelt. Keine Adresse unter `*.workers.dev` und keine Vorschau-Adressen (`workers_dev` und `preview_urls` aus), damit die Website nur unter der eigenen Domain erscheint.
+| File | Contents |
+|---|---|
+| `_docs/hosting.md` | Domain, DNS, email records, Cloudflare configuration, deployment, history and lessons learned |
+| `_docs/tools.md` | Building a tool step by step, approved norm values, the unit converter app (`/tools/einheiten/`) |
+| `_tests/README.md` | What each test checks |
+| `_notizen/` | Working notes in German: tool ideas and status (`tool-ideen.md`), log of the Jekyll → Astro migration |
 
-## Grundsätze
+## Principles
 
-- **Schlicht bleiben:** eine Spalte, viel Weissraum, keine Animationen. Astro nur als Generator für statisches HTML: keine UI-Frameworks (kein React, Vue, Svelte, Tailwind, Bootstrap), keine Astro-Islands bzw. `client:`-Komponenten, keine zusätzlichen Integrationen ohne Rückfrage. Seiten als `.astro` (HTML mit wenig Logik), Beiträge in Markdown, das ganze Design in `public/style.css`.
-- **Kein externes JavaScript und keine Tracker**, ausser es wird ausdrücklich gewünscht. Ausdrücklich gewünscht (November 2026): **Besucherstatistik mit Umami Cloud** (Region EU) ohne Cookies (kein Cookie-Banner nötig), eine einzige Skript-Zeile in `src/components/Umami.astro` (eingebunden in `Base.astro` und im Einheiten-Umrechner) und gleich lautend von Hand in jedem Tool unter `public/tools/`. Sie zählt nur auf der eigenen Domain und ohne `?`/`#` der Adresse, damit Eingaben der Tools nie mitgehen. Eigene Events: `data-umami-event="Name"` auf Buttons (nicht auf Links im selben Tab, Umami fängt deren Klick ab), sonst `window.umami && window.umami.track("Name", {…})`. Bisher: "URL kopieren" (alle Tools, mit `data-umami-event-tool`), "PDF-Download" (alle Links auf `.pdf`, Inline-Skript in `Base.astro`), "Lebenslauf als PDF", "Ins Balken-Tool übernommen" (Lastkombinationen), "App installiert" (Einheiten). Neue Events und neue erfasste Daten auch auf den Datenschutzseiten nachführen. Sonst einzige Ausnahme sind die kleinen eigenen Inline-Skripte in `src/layouts/Base.astro` (alle mit `is:inline` bzw. `define:vars`, damit Astro sie nicht bündelt): der Hell/Dunkel/System-Umschalter (speichert die Wahl in `localStorage`, ohne JavaScript bleibt die Systemeinstellung aktiv und die Buttons sind ausgeblendet), das Einsetzen der E-Mail-Adresse und der Button "Als PDF speichern" im Lebenslauf (öffnet den Druckdialog, ohne JavaScript ausgeblendet). Die Tools unter `public/tools/` sind eigenständige Seiten mit eigenem Inline-JavaScript (siehe Abschnitt "Tools"). Ausnahme ist der Einheiten-Umrechner: eine Astro-Seite, deren Skript Astro in eine eigene Datei unter `/_astro/` bündelt, dazu ein eigener Service Worker nur für dieses Tool. Formeln in Blogbeiträgen setzt KaTeX **beim Build** (kein KaTeX-JavaScript im Browser); nur das Stylesheet und die Schriften liegen **lokal** in `public/assets/katex/` (kein CDN) und werden nur auf Beiträgen mit Formeln geladen.
-- **Sprache:** Deutsch (Hauptsprache, Schweizer Rechtschreibung, immer `ss`, nie `ß`) und Englisch (amerikanische Schreibweise, `en_US`). Arbeitstitel in Originalsprache belassen.
-- **Datenschutz:** Keine Wohnadresse (Strasse), Telefonnummer und kein Geburtsdatum auf der Seite. Auf Wunsch veröffentlicht: Wohnort Lyss und "seit 2024 verheiratet mit Prisca" (Lebenslauf, Abschnitt Persönliches, und erster Satz der Startseite). Kontakt über LinkedIn und E-Mail.
-- **E-Mail nie im Klartext** in HTML, Code oder Repo schreiben (das Repo ist öffentlich). Sie steht nur Base64-kodiert als `emailB64` in `src/data/site.ts` und wird per Inline-Skript in `src/layouts/Base.astro` in alle `<a class="email">` eingesetzt. Umgebende Texte stehen in `<span class="email-wrap" hidden>` und bleiben ohne JavaScript ausgeblendet. Aktuell: Kontakt-Abschnitt beider Startseiten, Kopf beider Lebensläufe und Abschnitt "Verantwortlich" beider Datenschutzseiten. `npm test` prüft Repo und Build darauf.
-- Änderungen klein halten und bestehende Klassen in `public/style.css` wiederverwenden, statt neue Stile zu erfinden. Bestehende Komponenten und Hilfsfunktionen (`src/components/`, `src/lib/`) wiederverwenden.
+### Privacy (strict, unchanged)
 
-## Struktur
+- **No third-party requests.** No CDNs, external fonts, embeds or scripts from other domains. Libraries, fonts and assets are bundled locally (npm + Astro build, or `public/`). Approved exceptions only: Umami Cloud (below) and the QR-Reader copy in `public/QR-tool/` (loads libraries from jsDelivr).
+- **No tracking beyond Umami**, no cookies for statistics or advertising, so no cookie banner.
+- **Tool inputs never leave the device.** No server, no API calls with user data. Inputs are stored only in the URL hash (`#` + JSON) and in `localStorage`.
+- **Personal data:** no street address, phone number or date of birth. Published on request: place of residence Lyss and "married to Prisca since 2024" (CV, personal section, and the first sentence of the home page). Contact via LinkedIn and email.
+- **Email never in plain text** in HTML, code or the repo (the repo is public). It exists only Base64-encoded as `emailB64` in `src/data/site.ts`; an inline script in `src/layouts/Base.astro` inserts it into every `<a class="email">`. Surrounding text sits in `<span class="email-wrap" hidden>` and stays hidden without JavaScript. Currently used in: contact section of both home pages, header of both CVs, "Verantwortlich"/"Controller" on both privacy pages. `npm test` checks repo and build.
+- **Privacy pages** `/datenschutz` and `/en/privacy`: any new third party, new collected data or new Umami event is added to both in the same change.
+
+**Visitor statistics (Umami Cloud, EU region, explicitly requested November 2026):** one script line in `src/components/Umami.astro` (used by `Base.astro` and the unit converter) and the identical line by hand in every tool under `public/tools/` (a test checks the exact wording). It counts only on the own domain and drops `?`/`#` from URLs, so tool inputs are never sent; "Do Not Track" is respected. Custom events: `data-umami-event="Name"` on buttons (not on same-tab links, Umami intercepts their click), otherwise `window.umami && window.umami.track("Name", {…})`. Current events: "URL kopieren" (all tools, with `data-umami-event-tool`), "PDF-Download" (all `.pdf` links, inline script in `Base.astro`), "Lebenslauf als PDF", "Ins Balken-Tool übernommen" (load combinations), "App installiert" (unit converter).
+
+### Look (strict, unchanged)
+
+- Clean and calm: one column, generous whitespace, lines instead of cards. No decorative animations; small functional transitions are fine if they respect `prefers-reduced-motion`.
+- The whole site design lives in `public/style.css`: colors as CSS variables (light `#fcfcfb`, dark `#151515`, `--text`, `--muted`, `--border`, `--tag-bg` …), dark mode via system setting and `data-theme`, print view. Reuse existing classes instead of inventing new styles. No CSS frameworks (no Tailwind, no Bootstrap).
+- Every page must work at phone width and in dark mode.
+
+### JavaScript (allowed, with rules)
+
+- **Own JavaScript/TypeScript is welcome**, on tools and on regular pages: Astro `<script>` (bundled into `/_astro/`, preferred for anything non-trivial) or inline scripts. Inline scripts in `Base.astro` use `is:inline` or `define:vars` so Astro does not bundle them.
+- **Progressive enhancement:** text pages (home, CV, blog, privacy) must be fully readable without JavaScript. Controls that need JavaScript are hidden without it (pattern: theme switcher and "Als PDF speichern" in the CV). Tools may require JavaScript.
+- **npm libraries** are fine after a license check (MIT, BSD, Apache-2.0, ISC without asking; anything else ask first). Exact versions in `package.json`, bundled locally, loaded only on the pages that use them.
+- **UI frameworks and Astro islands** (`client:*`, e.g. Preact or Svelte) only when a tool needs real state management, and only after asking. Not for regular pages.
+- **Keep it light:** regular pages ideally under ~50 KB of JavaScript (Umami excluded); larger tools as needed.
+- **Stay static:** no SSR, no server functions, no new Astro integrations or adapters without asking.
+- **Testable logic:** calculation code as pure functions without DOM, with tests in `_tests/`.
+
+### Languages
+
+- German is the main language (Swiss spelling: always `ss`, never `ß`), English uses American spelling (`en_US`). Titles of works stay in their original language.
+- **Keep both languages in sync:** every change to bio, CV, works or projects goes into `src/pages/index.astro`/`src/pages/cv.astro` **and** `src/pages/en/index.astro`/`src/pages/en/cv.astro`. Point this out to me.
+- Blog posts may exist in only one language.
+- Instructions and docs for Claude are in English; working notes in `_notizen/`, commit messages and website content stay in their language.
+
+### Working style
+
+- Keep changes small. Reuse components and helpers (`src/components/`, `src/lib/`) and existing CSS classes.
+- Work on a branch and open a PR; a push to `main` deploys.
+- Commit messages short and in German, e.g. `Blog: Beitrag zu IfcOpenShell` or `Arbeiten: PDF Projektarbeit BFH`.
+
+## Structure
 
 ```
-astro.config.mjs     Astro: Domain, Ausgabeformat 'preserve', Markdown (remark/rehype, KaTeX, Typografie)
-wrangler.jsonc       Cloudflare Workers: Name, Domain, statische Dateien aus dist/
-package.json         Abhängigkeiten (exakte Versionen) und Befehle: dev, build, preview, check, test
-.github/workflows/deploy.yml  Bauen, prüfen und veröffentlichen (siehe "Prüfen")
+astro.config.mjs     Astro: domain, output format 'preserve', Markdown (remark/rehype, KaTeX, typography)
+wrangler.jsonc       Cloudflare: name, domain, static assets from dist/ (no Worker code), see _docs/hosting.md
+package.json         Dependencies (exact versions) and scripts: dev, build, preview, check, test
+.github/workflows/deploy.yml  Type check, tests, build, deploy (see "Checking")
 src/
-  content.config.ts  Collection "blog": Ordner, Dateinamen, Pflichtfelder im Front Matter
-  content/blog/      Deutsche Blogbeiträge in Markdown (→ /blog/:slug/)
-  content/blog/en/   Englische Blogbeiträge (→ /en/blog/:slug/)
-  data/site.ts       Titel, Beschreibung, Domain, emailB64, Social-Links
-  data/i18n.ts       Feste Texte der gemeinsamen Layouts/Komponenten auf DE und EN, Datumsformat
-  data/pages.ts      Seiten mit Gegenstück in der anderen Sprache (ref → Adresse je Sprache)
-  data/tools.ts      Liste der Tools für /tools/ und /en/tools/ (Titel, Beschreibung, Tags auf DE und EN)
-  layouts/Base.astro Gemeinsames Layout: <head>, hreflang, Menü, Sprachumschalter, Footer, Inline-Skripte
-  layouts/Post.astro Layout für Blogbeiträge (Datum, Lesezeit, älter/neuer)
-  components/        Nav (Menü), Seo (Titel, Link-Vorschau, JSON-LD), BlogList (3 neueste auf der Startseite), PersonJsonLd (schema.org/Person), Umami (Besucherstatistik)
-  lib/posts.ts       Beiträge: Datum/Sprache/Adresse aus dem Dateinamen, Lesezeit, älter/neuer, Gegenstück, postUrl()
-  lib/feed.ts        Atom-Feeds
-  lib/einheiten.ts   Rechenkern des Einheiten-Umrechners (reine Funktionen, TypeScript, ohne DOM)
-  lib/remark-math-extras.mjs  $$…$$ allein im Absatz = Block-Formel; merkt sich, ob ein Beitrag Formeln hat
-  pages/             Alle Seiten und Endpunkte, Pfad = Adresse (siehe "Adressen")
-    index.astro, cv.astro, datenschutz.astro, 404.astro, tools/index.astro   Deutsch (404 Englisch, eine für alles)
-    en/index.astro, en/cv.astro, en/privacy.astro, en/tools/index.astro      Englisch
-    blog/index.astro, en/blog/index.astro                        Blog-Übersicht (alle Beiträge, mit Beschreibung und Tags)
-    blog/[slug]/index.astro, en/blog/[slug]/index.astro          Blogbeiträge
-    feed.xml.ts, en/feed.xml.ts, sitemap.xml.ts                  Feeds und Sitemap
-    tools/einheiten/index.astro                                  Einheiten-Umrechner (eigenständig, ohne Base-Layout)
-public/              Wird unverändert veröffentlicht
-  style.css          Gesamtes Design; Farben als CSS-Variablen inkl. Dark Mode (System + data-theme) und Druckansicht
-  tools/<name>/index.html  Einzelnes Tool, eigenständige HTML-Seite (nur Deutsch)
-  tools/<name>/icons/      icon.svg (Quelle) und apple-touch-icon.png (eigenes iOS-Home-Bildschirm-Symbol pro Tool)
-  tools/einheiten/   manifest.webmanifest, sw.js (Service Worker) und icons/ (Quelle icon.svg) der App "Einheiten"
-  assets/katex/      KaTeX 0.16.47 (MIT): nur katex.min.css und .woff2-Schriften
-  images/            profil.jpg, og-image.jpg, projekte/ für Projekt-Icons, blog/ für Beitragsbilder
-  arbeiten/          PDFs von Arbeiten (Projekt-, Bachelorarbeiten), nur im Original
-  favicon.svg, favicon.ico (16/32/48), favicon-32.png, apple-touch-icon.png (180×180, randlos dunkelblau, iOS rundet selbst)  Website-Symbol "Statik & Code", Quelle: G:\Meine Ablage\personal_website\favicon 3.0
-  QR-tool/           QR-Reader.html und QR-Streamer.html, unveränderte Kopie aus dem Repo QR-tool (dort bis November 2026 per GitHub Pages unter dieser Domain); Änderungen dort machen und hierher kopieren. Ausnahme von den Regeln der Website (lädt Bibliotheken per CDN, ohne Statistik und Datenschutz-Fusszeile); die Tests nehmen den Ordner aus
-  robots.txt         Verweis auf die Sitemap
-  _redirects         Cloudflare: 301 von den früheren .html-Adressen (/cv.html → /cv usw.)
-  google385c59b71b73dd03.html  Bestätigung Google Search Console
-_drafts/vorlage.md   Vorlage für neue Beiträge (nicht veröffentlicht)
-_notizen/            Interne Notizen, z. B. tool-ideen.md, astro-migration.md (nicht veröffentlicht)
-_tests/              Tests (Node.js): Tools gegen Formeln/FE, Website mit Astro-Build, Live-Prüfung (nicht veröffentlicht)
-_skripte/icons.mjs   Exportiert die Tool-Symbole aus icons/icon.svg als PNG (lokales Chrome/Edge, keine Abhängigkeit)
-ANLEITUNG.md         Anleitung für PDF-Uploads (nicht veröffentlicht)
-README.md            Beschreibung für das GitHub-Repo (nicht veröffentlicht)
+  content.config.ts  Collection "blog": folder, file names, required front matter
+  content/blog/      German blog posts (→ /blog/:slug/), English ones in content/blog/en/ (→ /en/blog/:slug/)
+  data/site.ts       Title, description, domain, emailB64, social links, absoluteUrl(), pagePath()
+  data/i18n.ts       Fixed texts of shared layouts/components in DE and EN, date format
+  data/pages.ts      Pages with a counterpart in the other language (ref → URL per language)
+  data/tools.ts      Tool list for /tools/ and /en/tools/ (title, description, tags in DE and EN)
+  layouts/Base.astro Shared layout: <head>, hreflang, menu, language switch, footer, inline scripts
+  layouts/Post.astro Blog post layout (date, reading time, older/newer)
+  components/        Nav, Seo (title, link preview, JSON-LD), BlogList (3 newest on the home page), PersonJsonLd, Umami
+  lib/posts.ts       Posts: date/language/URL from the file name, reading time, older/newer, counterpart, postUrl()
+  lib/feed.ts        Atom feeds
+  lib/einheiten.ts   Calculation core of the unit converter (pure TypeScript functions)
+  lib/remark-math-extras.mjs  $$…$$ alone in a paragraph = block formula; remembers whether a post has formulas
+  pages/             All pages and endpoints, path = URL (see "URLs")
+    index, cv, datenschutz, 404, tools/index, blog/index, blog/[slug]     German (404 in English, one for all)
+    en/index, en/cv, en/privacy, en/tools/index, en/blog/index, en/blog/[slug]   English
+    feed.xml.ts, en/feed.xml.ts, sitemap.xml.ts                         Feeds and sitemap
+    tools/einheiten/index.astro                                         Unit converter (standalone, no Base layout)
+public/              Published unchanged
+  style.css          The whole site design
+  tools/<name>/      One tool: index.html (standalone page, German only) and icons/
+  QR-tool/           Unchanged copy of QR-Reader.html and QR-Streamer.html from the repo QR-tool; change them there and copy here. Exempt from the site rules (CDN libraries, no Umami, no privacy footer); the tests skip this folder
+  assets/katex/      KaTeX 0.16.47 (MIT): only katex.min.css and .woff2 fonts
+  images/            profil.jpg, og-image.jpg, projekte/ (project icons), blog/ (post images)
+  arbeiten/          PDFs of academic works, original only
+  favicon.svg, favicon.ico, favicon-32.png, apple-touch-icon.png   Site icon "Statik & Code" (source: G:\Meine Ablage\personal_website\favicon 3.0)
+  _redirects         Cloudflare: 301 from the former .html URLs (/cv.html → /cv …)
+  robots.txt, google385c59b71b73dd03.html   Sitemap pointer; Google Search Console verification (do not delete or change)
+_docs/               Reference docs for Claude (English), see table above
+_notizen/            Working notes (German)
+_drafts/vorlage.md   Template for new posts
+_tests/              Tests (Node.js), see _tests/README.md
+_skripte/icons.mjs   Exports tool icons from icons/icon.svg to PNG (local Chrome/Edge, no dependency)
+ANLEITUNG.md         PDF upload guide (German)
+README.md            Repo description (German)
 ```
 
-Veröffentlicht wird nur, was Astro aus `src/pages/` erzeugt, plus der Inhalt von `public/`. Alles andere im Hauptordner (auch `_tests/`, `_notizen/`, Markdown-Dateien) gelangt nicht auf die Website.
+Only what Astro builds from `src/pages/` plus the contents of `public/` is published. Everything else (`_docs/`, `_tests/`, `_notizen/`, Markdown files in the root) is not.
 
-**Adressen:** `build.format: 'preserve'` in `astro.config.mjs`: `src/pages/foo.astro` → Datei `foo.html`, Adresse `/foo` (Cloudflare, siehe oben); `src/pages/foo/index.astro` → `/foo/`. Seiten also immer ohne `.html` verlinken (`/cv`, `/datenschutz`, `/en/privacy`); `pagePath()` aus `src/data/site.ts` entfernt `.html` für canonical und hreflang, die Sitemap ebenso. Neue Seite = neue Datei in `src/pages/`, mit `<Base lang="…" ref="…" title="…" description="…">` als Rahmen. Hat sie ein Gegenstück in der anderen Sprache, beide Adressen unter einer gemeinsamen `ref` in `src/data/pages.ts` eintragen. Interne Links und Asset-Pfade immer absolut schreiben (`/style.css`, `/images/...`). Die Sitemap nimmt neue Seiten automatisch auf.
+## URLs
 
-`public/google385c59b71b73dd03.html` ist die Bestätigungsdatei für die Google Search Console: nicht löschen, Inhalt nicht ändern, kein Front Matter. Cloudflare leitet sie (wie alle `.html`) auf `/google385c59b71b73dd03` weiter; im DNS (Cloudflare) steht zusätzlich der TXT-Eintrag `google-site-verification=…`, mit dem die Search Console die Domain ebenfalls bestätigen kann. Sie ist in `src/pages/sitemap.xml.ts` von der Sitemap ausgenommen.
+- `build.format: 'preserve'`: `src/pages/foo.astro` → file `foo.html`, served by Cloudflare as `/foo`; `src/pages/foo/index.astro` → `/foo/`.
+- Always link pages without `.html` (`/cv`, `/datenschutz`, `/en/privacy`). `pagePath()` strips `.html` for canonical and hreflang, the sitemap does too. Former `.html` URLs redirect via `public/_redirects`; new pages need no entry there.
+- New page: new file in `src/pages/` wrapped in `<Base lang="…" ref="…" title="…" description="…">`. If it has a counterpart in the other language, add both URLs under one `ref` in `src/data/pages.ts`. The sitemap picks up new pages automatically.
+- Internal links and asset paths always absolute (`/style.css`, `/images/...`). Absolute URLs always with `https://josija-nydegger.ch` (or `absoluteUrl()` from `src/data/site.ts`).
+- In `.astro` files, curly braces in text are code: write `&#123;` / `&#125;`.
 
-## Konventionen
+## Conventions
 
-### Blogbeiträge
-- Datei: `src/content/blog/JJJJ-MM-TT-titel-mit-bindestrichen.md` (Kleinbuchstaben, keine Umlaute im Dateinamen). Das Datum im Namen ist das Veröffentlichungsdatum, der Rest die Adresse (`/blog/titel-mit-bindestrichen/`). Dateien ohne Datum vorne sind keine Beiträge.
-- Front Matter, Pflicht (sonst bricht der Build mit einer Meldung ab):
-  ```yaml
-  ---
-  title: Titel des Beitrags
-  description: Ein Satz Zusammenfassung (für Blog-Übersicht und Link-Vorschau).
-  ref: kurze-kennung
-  ---
-  ```
-- Optional: `image: /images/blog/bild.jpg` (eigene Link-Vorschau mit grossem Bild, ideal 1200×630), `tags: [A, B]` (erscheinen in der Blog-Übersicht), `last_modified_at: JJJJ-MM-TT` (Feed und Sitemap), `slug:` (andere Adresse), `date:` (anderes Datum), `published: false` (nicht veröffentlichen).
-- Englische Übersetzung: `src/content/blog/en/JJJJ-MM-TT-english-title.md` mit **derselben `ref`**. Ohne Gegenstück führt der Sprachumschalter zur Blog-Übersicht der anderen Sprache.
-- Beiträge mit Datum in der Zukunft erscheinen erst beim ersten Build ab diesem Tag (nächster Push auf `main` oder die Action im Tab Actions von Hand starten).
-- Das Layout zeigt automatisch die Lesezeit (ca. 200 Wörter/Minute) und Links zum älteren/neueren Beitrag derselben Sprache (nur falls vorhanden).
-- **Blog-Übersicht** `/blog/` bzw. `/en/blog/`: alle Beiträge der Sprache, neueste zuerst, mit Beschreibung und Tags (Aufbau wie `/tools/`). Die Startseite zeigt im Abschnitt "Blog" nur die 3 neuesten knapp (Titel und Datum, `src/components/BlogList.astro`) mit Link "Alle Beiträge →".
-- Bilder im Text mit fester Breite als HTML, z. B. `<img src="/images/blog/bild.png" alt="…" width="480" loading="lazy">` (kramdown-Syntax `{: width=…}` funktioniert nicht).
-- Link von einem Projekt auf der Startseite zum Beitrag: `postUrl(ref, lang)` aus `src/lib/posts.ts`, Tag nur anzeigen, wenn der Beitrag veröffentlicht ist (siehe QR-tool), sonst scheitert der Linktest vor dem Veröffentlichungsdatum.
-- **Formeln (LaTeX):** inline `$…$`, als Block `$$…$$` allein in einem Absatz (oder `$$` auf eigenen Zeilen). Formeln werden beim Build gesetzt; `\{`, `\\`, `*` usw. funktionieren direkt, keine Umwege wie früher bei kramdown. Dollarzeichen als Text: `\$` (oder `<span class="nomath">$</span>`). Fehlerhafte Formeln erscheinen rot statt den Build abzubrechen: nach dem Schreiben in der Vorschau ansehen.
-- Typografie automatisch: `"…"` → “…”, `--` → –, `---` → —, `...` → …. Gilt nicht für Titel und Beschreibung im Front Matter.
-- Beiträge werden teils in Obsidian geschrieben: Wikilinks `[[...]]` in normale Markdown-Links umwandeln, Bilder nach `public/images/blog/` verschieben und mit absolutem Pfad (`/images/blog/...`) einbinden.
-- Beiträge als `.md`, nicht `.mdx` (sonst stören geschweifte Klammern in Formeln).
+### Blog posts
+- File: `src/content/blog/YYYY-MM-DD-title-with-hyphens.md` (lowercase, no umlauts). The date is the publication date, the rest the URL (`/blog/title-with-hyphens/`). Files without a leading date are not posts. Markdown `.md`, not `.mdx` (curly braces in formulas).
+- Required front matter (the build stops with a message otherwise): `title`, `description` (one sentence for blog overview and link preview), `ref` (short id). Optional: `image` (own link preview with large image, ideally 1200×630), `tags: [A, B]` (shown in the blog overview), `last_modified_at` (feed and sitemap), `slug`, `date`, `published: false`. Template: `_drafts/vorlage.md`.
+- English translation: `src/content/blog/en/YYYY-MM-DD-english-title.md` with the **same `ref`**. Without a counterpart, the language switch leads to the other language's blog overview.
+- Posts dated in the future appear with the first build on or after that day (next push to `main`, or run the Action manually).
+- The layout adds reading time (~200 words/minute) and links to the older/newer post in the same language.
+- Blog overview `/blog/` and `/en/blog/`: all posts of the language, newest first, with description and tags (built like `/tools/`). The home page shows only the 3 newest (title and date, `BlogList.astro`) with "Alle Beiträge →".
+- Images with fixed width as HTML: `<img src="/images/blog/bild.png" alt="…" width="480" loading="lazy">`. Images go to `public/images/blog/`.
+- Link from a project on the home page to a post: `postUrl(ref, lang)` from `src/lib/posts.ts`, and show the tag only once the post is published (see QR-tool), otherwise the link test fails before the publication date.
+- Formulas (LaTeX, typeset by KaTeX at build time, no KaTeX JavaScript in the browser; stylesheet only on posts with formulas): inline `$…$`, block `$$…$$` alone in a paragraph (or `$$` on separate lines). A literal dollar sign: `\$` or `<span class="nomath">$</span>`. Broken formulas render red instead of failing the build, so check the preview.
+- Automatic typography: `"…"` → “…”, `--` → –, `---` → —, `...` → …. Not applied to title and description in the front matter.
+- Posts written in Obsidian: convert wikilinks `[[...]]` to normal Markdown links, move images to `public/images/blog/` and link them absolutely.
 
-### Arbeiten (`src/pages/index.astro`, Abschnitt "Arbeiten")
-- Neueste zuerst. Ein Eintrag ist ein `<li class="item">`-Block mit `item-head`, `item-title`, `item-year`, `item-sub`.
-- PDF in `public/arbeiten/` ablegen und verlinken mit
-  `<div class="tags"><a class="tag" href="/arbeiten/DATEI.pdf" target="_blank" rel="noopener">PDF</a></div>`.
-- Immer auch in `src/pages/en/index.astro` eintragen: Titel im Original, nur die Beschreibung übersetzen.
-- In `.astro`-Dateien gelten geschweifte Klammern `{ }` im Text als Code: als `&#123;` / `&#125;` schreiben.
+### Works (`src/pages/index.astro`, section "Arbeiten")
+- Newest first. One entry is an `<li class="item">` with `item-head`, `item-title`, `item-year`, `item-sub`.
+- PDF in `public/arbeiten/`, linked with `<div class="tags"><a class="tag" href="/arbeiten/FILE.pdf" target="_blank" rel="noopener">PDF</a></div>`. PDFs exist only in the original; before uploading, check for personal data (e.g. student numbers on the title page) and redact it properly, not just cover it.
+- Always add to `src/pages/en/index.astro` too: title in the original, only the description translated.
 
-### Projekte (`src/pages/index.astro`, Abschnitt "Projekte")
-- Gleiche Struktur wie Arbeiten; Tags für Links (`Code`, `Demo`) und Technologien. Links immer als `<a class="tag">` (bekommen automatisch Rahmen und ↗), reine Info-Tags als `<span class="tag">`.
-- Projekt-Icon: rund, 160×160 px, in `public/images/projekte/`, vor dem Titel mit `<img class="item-icon" src="/images/projekte/NAME.png" alt="" width="40" height="40" loading="lazy">`.
+### Projects (`src/pages/index.astro`, section "Projekte")
+- Same structure as works; tags for links (`Code`, `Demo`) and technologies. Links always `<a class="tag">` (get border and ↗ automatically), pure info tags `<span class="tag">`.
+- Project icon: round, 160×160 px, in `public/images/projekte/`, before the title: `<img class="item-icon" src="/images/projekte/NAME.png" alt="" width="40" height="40" loading="lazy">`.
 
-### Menü
-- Oben links auf allen Seiten mit `Base`-Layout: Start (EN: Home) · CV · Tools · Blog (→ `/blog/` bzw. `/en/blog/`), rechts der Sprachumschalter. Aktiver Punkt über `ref` (`home`, `cv`, `tools`, `blog`) bzw. Blogbeitrag.
-- Neue Hauptseiten bekommen ein eigenes `ref` (in `src/data/pages.ts`) und, falls sie ins Menü gehören, einen Eintrag in `src/components/Nav.astro` (beide Sprachen). Der Lebenslauf hat keinen Zurück-Button, das Menü ersetzt ihn.
+### Menu
+- Top left on all pages with the `Base` layout: Start (EN: Home) · CV · Tools · Blog, language switch on the right. Active item via `ref` (`home`, `cv`, `tools`, `blog`) or blog post.
+- New main pages get their own `ref` in `src/data/pages.ts` and, if they belong in the menu, an entry in `src/components/Nav.astro` (both languages). The CV has no back button; the menu replaces it.
 
-### Lebenslauf und strukturierte Daten
-- Der Lebenslauf hat eine eigene Druckansicht (`@media print` in `public/style.css`): immer hell, ohne Navigation, keine Seitenumbrüche mitten in einem Eintrag.
-- Änderungen an Arbeitgeber, Studium oder Wohnort auch in `src/components/PersonJsonLd.astro` nachführen (aktuell Baukonstrukt AG seit November 2026; BSB + Partner 2024 bis Oktober 2026 mit `endDate`).
+### CV and structured data
+- The CV has its own print view (`@media print` in `style.css`): always light, no navigation, no page breaks inside an entry.
+- Changes to employer, studies or place of residence also go into `src/components/PersonJsonLd.astro` (currently Baukonstrukt AG since November 2026; BSB + Partner 2024 to October 2026 with `endDate`).
+
+### Bilingual setup
+- German at `/`, `/cv`, `/blog/:slug/`; English at `/en/`, `/en/cv`, `/en/blog/:slug/`.
+- Language switch "DE | EN" (plain links in `Base.astro`) looks for the counterpart with the same `ref`: first in `src/data/pages.ts`, then among posts (`counterpartUrl()` in `src/lib/posts.ts`); without a counterpart → home page of the other language (for posts: its blog overview).
+- `hreflang` links (`de`, `en`, `x-default` → German) only when a real counterpart exists.
+- `src/data/i18n.ts` only for texts that shared layouts and components need, always in both languages. Texts of a single page go directly into that page.
+- Date format: German `3.11.2026`, English `3 Nov 2026` (`formatDate()` in `src/data/i18n.ts`).
+- Atom feeds `/feed.xml` (DE) and `/en/feed.xml` (EN) from `src/lib/feed.ts`; formulas in feeds only as MathML.
+- **Translation:** natural, not literal. Fixed terms: Werkstudent → *working student*, Sozialpädagoge HF → *Social Pedagogue (Swiss College of Higher Education)*, Tragwerke → *structural engineering*, Zivildienst → *Swiss civilian service*, Matura → *Swiss Matura (university entrance qualification)*, Tiefbau → *infrastructure engineering*, Hochbau → *structural engineering for buildings*, Projektarbeit → *semester project*. List uncertain translations for me to review. Titles of works (including the Matura thesis) stay in the original. Proper names without an official English name stay in the original (e.g. ICP Höhere Fachschule für Sozialpädagogik, HOPE Sozialwerk, Chrischtehüsli, Gymnasium Interlaken, UGZ Stadt Zürich).
 
 ## Tools
 
-Kleine Web-Tools zu Tragwerken, Statik und BIM unter `/tools/`. Ideen und Reihenfolge stehen in `_notizen/tool-ideen.md`.
-Bisher: `public/tools/balken/` (Balken mit Auskragung, Einfeld- und Durchlaufträger), `public/tools/querschnittswerte/` `public/tools/biegebemessung/` (Biegebemessung Rechteckquerschnitt nach SIA 262:2025) `public/tools/lastkombinationen/` (Lastkombinationen nach SIA 260:2013, Übergabe von q_d ans Balken-Tool über dessen Hash-Format `#{"t":"einfeld","e":{...}}`) und der Einheiten-Umrechner (siehe unten).
+Small web tools for structures, statics and BIM under `/tools/`, German only for now (`/en/tools/` says so). Current tools: `balken` (beam with cantilever, simply supported and continuous), `querschnittswerte` (section properties), `biegebemessung` (bending design of rectangular sections per SIA 262:2025), `lastkombinationen` (load combinations per SIA 260:2013, hands q_d to the beam tool via its hash format `#{"t":"einfeld","e":{...}}`) and `einheiten` (unit converter, installable app). Ideas and order: `_notizen/tool-ideen.md`.
 
-### Neues Tool erstellen
-1. **Ablage:** `public/tools/<name>/index.html`, Ordnername kurz, Kleinbuchstaben, ohne Umlaute. Astro kopiert die Datei unverändert (kein Layout, keine Vorlagen-Logik). Eine einzige Datei mit eigenem `<style>` und `<script>`.
-2. **Liste:** Eintrag in `src/data/tools.ts` oben einfügen (neueste zuerst) mit `url`, `year`, `title`/`description`/`tags` je in `de` und `en`. Die Übersichten `/tools/` und `/en/tools/` entstehen daraus automatisch, die Sitemap nimmt das Tool automatisch auf.
-3. **Aussehen wie die Website:** Farbvariablen aus `public/style.css` übernehmen (hell `#fcfcfb`, dunkel `#151515`, `--text`, `--muted`, `--border`, `--tag-bg` usw.), gleiche Schrift, ruhiges Layout mit Linien statt Karten. Ein bestehendes Tool als Vorlage kopieren.
-4. **Kopf (`<head>`):** `lang="de-CH"`; das Inline-Skript für das Farbschema als erstes Skript (verhindert Aufblitzen); `<title>Name | Josija Nydegger</title>`; `meta description`; Favicons; **Link-Vorschau** von Hand: `canonical`, `og:type`, `og:site_name`, `og:locale` (`de_CH`), `og:title`, `og:description`, `og:url`, `twitter:card` mit `summary`. **Kein `og:image`**, damit WhatsApp, Teams usw. das kleine Symbol (`apple-touch-icon`) zeigen statt eines grossen Bildes. **Eigenes iOS-Home-Bildschirm-Symbol:** `<link rel="apple-touch-icon" href="/tools/<name>/icons/apple-touch-icon.png">` und `<meta name="apple-mobile-web-app-title" content="<Kurzname>">` (höchstens 12 Zeichen). Symbol als `public/tools/<name>/icons/icon.svg` zeichnen (512×512, randlos, Hintergrund `#0f2a4a`, Weiss und Orange `#ff8a1f`, Inhalt im inneren Kreis mit 80 % Durchmesser), Tool in `TOOLS` von `_skripte/icons.mjs` eintragen und `node _skripte/icons.mjs` ausführen (180×180, PNG ohne Alphakanal, iOS rundet selbst). Ein bestehendes Tool zeigt die genauen Zeilen. **Besucherstatistik:** die Umami-Zeile (mit Kommentar) aus einem bestehenden Tool unverändert nach `apple-mobile-web-app-title` einfügen (Test prüft gleichen Wortlaut).
-5. **Seitenaufbau:** oben `← Tools` (Link auf `/tools/`) und rechts daneben der Button "URL kopieren" (kopiert den Link mit den Eingaben, wichtig in Web-Apps ohne Adresszeile; Markup inkl. `data-umami-event="URL kopieren" data-umami-event-tool="<name>"`, Stil und Skript aus einem bestehenden Tool übernehmen), Titel, Kurzbeschreibung mit Einheiten; Eingaben; Zeichnung/Ergebnisse; aufklappbarer **Rechenweg** mit Zwischenschritten; Abschnitt **Annahmen und Grenzen** mit Quellen bzw. Grundlagen und den geprüften Testfällen; Fusszeile mit **Haftungshinweis** ("Hilfsmittel für Studium und Vordimensionierung. Es ersetzt keine Prüfung durch eine fachkundige Person."), Links zu GitHub, Website und Datenschutz (`/datenschutz`) sowie Hell/Dunkel/System-Umschalter (gleicher `localStorage`-Schlüssel `theme` wie die Website).
-6. **Verhalten:** Eingaben in der Adresszeile speichern (`#` + JSON), damit ein kopierter Link dieselben Werte öffnet; Werte aus dem Link prüfen, bevor sie verwendet werden; Button "Zurücksetzen"; ungültige Eingaben mit klarer Meldung statt falscher Ergebnisse; Druckansicht hell und mit offenem Rechenweg.
-7. **Inhalt:** keine Normwerte (nur Mechanik und Eingaben der Nutzer). Ausnahme auf ausdrücklichen Wunsch: E-Modul-Vorlagen im Balken-Tool (Werte mit Normangabe: Baustahl 210 000 SIA 263:2013, Betonstahl 200 000 SIA 262:2025, Holz E<sub>m,mean</sub> C24 11 000 / GL24h 11 500 SIA 265:2021 (Gebrauchstauglichkeit; E<sub>0,05</sub> 7 400 / 9 600 nur im Hinweistext), Aluminium 70 000 SN EN 1999-1-1; jederzeit frei überschreibbar) und das Biegebemessungs-Tool, das ausdrücklich nach SIA 262:2025 rechnet (Vorlagen f<sub>ck</sub>/f<sub>ctm</sub> aus Tabelle 3, f<sub>yk</sub>/ε<sub>ud</sub> aus Tabellen 5 und 9, γ<sub>c</sub> = 1.5, γ<sub>s</sub> = 1.15, η<sub>fc</sub>, ε<sub>c2d</sub>, Spannungsblock 0.85·x, x/d-Grenzen 0.35/0.5·435/f<sub>yd</sub>, Mindestbewehrung 4.3.1.2; Bezeichnungen wie in der Ausgabe 2025, z. B. f<sub>yd</sub> statt f<sub>sd</sub>; Werte überschreibbar) sowie das Lastkombinationen-Tool (γ aus SIA 260:2013 Tabelle 1, Typ 2; ψ aus Anhang A, Tabelle 2; Schneelast auf Dächern nach SIA 261:2020, 5.2 und 5.3: Gl. (9) und (10), C<sub>e</sub>, μ<sub>1</sub> nach Figur 2, 5.3.4 und Figur 4; jeder Wert im Code mit Ziffer oder Tabelle kommentiert). Normtexte liegen lokal in `_normen/` (in `.gitignore`, lizenziert, **nie committen**); Eingaben verlassen den Rechner nicht (keine Server; die Statistik zählt nur Seitenaufrufe und Klicks, nie Eingaben). Bibliotheken und Schriften nur lokal einbinden, nie per CDN. Lizenz von Bibliotheken vorher prüfen.
-8. **Testbar machen:** Rechenkern als reine Funktion, z. B. zwischen `/*CALC-START*/` und `/*CALC-END*/` (Balken) oder über `window.__… = { compute }` (Querschnittswerte), damit er automatisch getestet werden kann.
-9. **Prüfen vor dem Commit:** gegen Tabellenwerte, Handrechnungen oder eine unabhängige Rechnung (z. B. FE) testen, inkl. Grenzfälle, als Testdatei in `_tests/` (Muster: `balken-*.test.js`, Pfad zum Tool `public/tools/<name>/index.html`) und im `test`-Skript des Haupt-`package.json` ergänzen; Darstellung auf Handybreite und im Dunkelmodus ansehen; Testfälle auf der Seite aufführen.
-10. Status in `_notizen/tool-ideen.md` nachführen. Die Tools sind vorerst nur auf Deutsch; `/en/tools/` weist darauf hin.
+Non-negotiable for every tool (details and the full checklist in `_docs/tools.md`):
+- Looks like the website, works at phone width and in dark mode, prints light with the worked solution open.
+- Inputs in the URL hash, validated before use; "Zurücksetzen" button; clear messages instead of wrong results.
+- Collapsible worked solution ("Rechenweg"), section "Annahmen und Grenzen" with sources and tested cases, footer with the disclaimer "Hilfsmittel für Studium und Vordimensionierung. Es ersetzt keine Prüfung durch eine fachkundige Person."
+- No norm values except the approved ones listed in `_docs/tools.md`. Licensed standards live in `_normen/` (gitignored, **never commit**).
+- Calculation core as a pure function with its own test file in `_tests/`, added to the `test` script.
 
-### Einheiten-Umrechner (`/tools/einheiten/`)
-Anders aufgebaut als die übrigen Tools, damit der Rechenkern in TypeScript getestet werden kann (November 2026, auf Wunsch):
-- **Rechenkern** `src/lib/einheiten.ts`: reine Funktionen ohne DOM (`convert()`, `formatNumber()`, `parseUnit()`). Jede Einheit hat Faktor zur SI-Basis und Dimensionsvektor [m, kg, s, K]; Masse ↔ Kraft nur über g (9.81 oder 10), Temperatur absolut/Differenz, Neigung (tan) und Bewehrung (`d12 s15`, `4 d16`; Abstand ohne Einheit unter 50 = cm) mit eigener Logik. Ausdrücke mit π/pi, Potenzen auf Klammern und `ans` (letztes mit Enter/Kopieren übernommenes Resultat, in `localStorage` `einheiten:ans`). Ohne Rechenzeichen angehängte Einheiten bleiben im Nenner (W/m²K = W/(m²·K)). Bei Rechnungen mit W, Wh oder J wählt die Kategorie Energie statt Moment. Neue Einheit: in `def(...)` (Atome mit erlaubten Vorsätzen) und, falls sie in einer Liste erscheinen soll, in `CATEGORIES`. Nur "löschbare" TypeScript-Syntax (keine `enum`, `namespace`, Parameter-Properties), weil Node die Datei in den Tests direkt ausführt.
-- **Seite** `src/pages/tools/einheiten/index.astro`: Kopf, Stil und Aufbau wie die übrigen Tools, ohne `Base`-Layout, Stil mit `is:inline`. Das `<script>` ohne `is:inline` importiert den Rechenkern; Astro bündelt es in eine Datei unter `/_astro/`.
-- **App (PWA), nur dieses Tool:** `public/tools/einheiten/manifest.webmanifest` (`scope`/`start_url` `/tools/einheiten/`), `sw.js` und `icons/`. Der Service Worker liegt im Tool-Ordner und kann darum keine anderen Seiten steuern; registriert wird er nur im Build, nicht in `npm run dev`. Strategie: Seite zuerst aus dem Netz (offline oder nach 3 s aus dem Speicher), `/_astro/`-Dateien aus dem Speicher. Updates kommen mit dem nächsten Öffnen mit Internet, ohne Versionsnummer; `CACHE` in `sw.js` nur bei grundlegenden Änderungen am Service Worker erhöhen. Keine Abhängigkeit (bewusst ohne `@vite-pwa/astro`).
-- **Icons** (kN ⇄ MPa): `icons/icon.svg` ändern, dann `node _skripte/icons.mjs`. Erzeugt `apple-touch-icon.png` (180), `icon-192/512.png` (`any`, runde Ecken) und `icon-maskable-192/512.png` (randlos). Danach `CACHE` in `sw.js` erhöhen, damit installierte Apps die neuen Icons laden (aktuell `einheiten-v2`).
-- **Tests:** `_tests/einheiten.test.mjs` (Rechenkern), `_tests/website.test.js` Abschnitt 7 (Manifest, Icons, Service Worker nur im Tool, übrige Seiten unberührt).
+## Checking
 
-## Zweisprachigkeit (Deutsch / Englisch)
+- **Once:** install Node.js 24, then `npm install`.
+- **Preview:** `npm run dev` (<http://localhost:4321>). Built site exactly as on Cloudflare: `npm run build`, then `npx wrangler dev`; with curl send `-H "Sec-Fetch-Mode: navigate"`, because Cloudflare treats browser page requests differently.
+- **Before every commit:** `npm run check` (types) and `npm test` (tool calculation cores against formulas, tables and FE; the unit converter; two full builds checking all pages, former URLs, email not in plain text, language switch, internal links, feeds, sitemap, formulas, redirects). Details: `_tests/README.md`. When a blog feature changes, update the test post in `_tests/fixtures/blog` and its check together.
+- **Deploy:** push to `main` runs `.github/workflows/deploy.yml` (types, tests, build, `wrangler deploy`, ~1–2 minutes). If a step fails, the previous site stays online; errors are in the **Actions** tab. Pull requests are only built and checked. After changes to domain, DNS or Cloudflare settings: `node _tests/live-pruefung.js`.
+- **Cache:** after changing the Markdown plugins (`astro.config.mjs`, `src/lib/remark-math-extras.mjs`), delete `.astro/` and `node_modules/.astro/`.
+- **Dependencies:** exact versions. When updating `katex`, also copy `katex.min.css` and the `.woff2` fonts from `node_modules/katex/dist/` to `public/assets/katex/` and update `VERSION.txt`.
+- Check links and file names for exact spelling.
 
-Status: **umgesetzt** (Oktober 2026).
-
-- Deutsch unter `/`, `/cv`, `/blog/:slug/`, Englisch unter `/en/`, `/en/cv`, `/en/blog/:slug/`.
-- Sprachumschalter "DE | EN" oben rechts (reine Links, in `src/layouts/Base.astro`). Er sucht das Gegenstück mit gleicher `ref`: zuerst in `src/data/pages.ts`, dann bei den Beiträgen (`counterpartUrl()` in `src/lib/posts.ts`); ohne Gegenstück → Startseite der anderen Sprache (bei Beiträgen deren Blog-Übersicht).
-- `hreflang`-Links (`de`, `en`, `x-default` → Deutsch) nur, wenn ein echtes Gegenstück existiert.
-- `src/data/i18n.ts` nur für Texte, die gemeinsame Layouts und Komponenten brauchen, immer in beiden Sprachen. Texte einer einzelnen Seite (z. B. Abschnittstitel) direkt in die Seite schreiben.
-- Datumsformat: Deutsch `3.11.2026`, Englisch `3 Nov 2026` (`formatDate()` in `src/data/i18n.ts`).
-- RSS: eigene Atom-Feeds `/feed.xml` (DE) und `/en/feed.xml` (EN), beide aus `src/lib/feed.ts`. Formeln im Feed nur als MathML.
-- PDFs der Arbeiten gibt es nur im Original. Vor dem Hochladen auf persönliche Daten prüfen (z. B. Matrikelnummern auf dem Titelblatt) und diese echt schwärzen, nicht nur überdecken.
-
-### Übersetzung
-- Texte natürlich übersetzen, nicht wörtlich. Feste Begriffe: Werkstudent → *working student*, Sozialpädagoge HF → *Social Pedagogue (Swiss College of Higher Education)*, Tragwerke → *structural engineering*, Zivildienst → *Swiss civilian service*, Matura → *Swiss Matura (university entrance qualification)*, Tiefbau → *infrastructure engineering*, Hochbau → *structural engineering for buildings*, Projektarbeit → *semester project*. Unsichere Übersetzungen mir zur Prüfung auflisten.
-- Titel der Arbeiten (auch der Maturaarbeit) bleiben im Original; nur die Beschreibung wird übersetzt.
-- Eigennamen ohne offizielle englische Bezeichnung bleiben im Original (z. B. ICP Höhere Fachschule für Sozialpädagogik, HOPE Sozialwerk, Chrischtehüsli, Gymnasium Interlaken, UGZ Stadt Zürich).
-
-### Es gilt
-- **Beide Sprachen immer synchron halten:** Jede Änderung an Bio, CV, Arbeiten oder Projekten in `src/pages/index.astro`/`src/pages/cv.astro` **und** `src/pages/en/index.astro`/`src/pages/en/cv.astro` nachführen und mich darauf hinweisen.
-- Blogbeiträge dürfen auch nur in einer Sprache existieren.
-
-## Später vielleicht
-- **Baukontrolle-Web-App einbinden, sobald sie fertig ist:** als eigenständige Datei unter `public/projekte/baukontrolle/index.html` (wird unverändert kopiert) und als erstes Projekt im Abschnitt "Projekte" mit Demo-Button (`target="_blank"`). Nur Beispielmodelle wie das FZK-Haus, nie Kundendaten. Google Fonts möglichst lokal einbinden.
-- Newsletter über Buttondown (Gratis-Plan, manueller Versand). Erfordert Anmeldeformular, Double Opt-in und eine Datenschutzseite.
-- Tags im Blog, IFC-Viewer (That Open Engine), weitere Ingenieur-Tools.
-- Markdown-Prozessor Sätteri (Standard in Astro 7) statt remark/rehype, sobald es eine offizielle KaTeX-Lösung gibt. Betrifft nur `astro.config.mjs` und `src/lib/remark-math-extras.mjs`; danach die Testbeiträge in `_tests/fixtures/blog` prüfen.
-
-## Prüfen
-
-- **Einmalig:** Node.js 24 installieren, dann im Hauptordner `npm install`.
-- **Lokal ansehen:** `npm run dev` (Vorschau unter <http://localhost:4321>, lädt bei Änderungen neu). Fertigen Build ansehen: `npm run build`, dann `npm run preview`.
-- **Vor jedem Commit:** `npm run check` (Typen) und `npm test`. Prüft die Rechenkerne der Tools gegen Formeln, Tabellenwerte und eine FE-Rechnung, den Einheiten-Umrechner gegen bekannte Umrechnungen und baut die Website zweimal (mit den echten Inhalten und mit den Testbeiträgen aus `_tests/fixtures/blog`): alle Seiten, keine Adresse der früheren Website fehlt, E-Mail nicht im Klartext, Sprachumschalter, interne Links, Feeds, Sitemap, Formeln, Datum, Lesezeit. Details: `_tests/README.md`.
-- Neue Tools bekommen eine eigene Testdatei in `_tests/` und einen Eintrag im `test`-Skript von `package.json`. Ändert sich eine Blog-Funktion, Testbeitrag und Prüfung gemeinsam anpassen.
-- **Veröffentlichen:** Push auf `main` startet `.github/workflows/deploy.yml` (Typen, Tests, Build, Veröffentlichung auf Cloudflare, ca. 1–2 Minuten). Schlägt ein Schritt fehl, bleibt die bisherige Website online; Fehler stehen im Tab **Actions** des Repos. Pull Requests werden nur gebaut und geprüft. Nach Änderungen an Domain oder DNS: `node _tests/live-pruefung.js`.
-- **Cache:** Nach Änderungen an den Markdown-Plugins (`astro.config.mjs`, `src/lib/remark-math-extras.mjs`) die Ordner `.astro/` und `node_modules/.astro/` löschen, sonst zeigt Astro Beiträge aus dem Cache.
-- **Abhängigkeiten:** exakte Versionen in `package.json`. Bei einem Update von `katex` auch `katex.min.css` und die `.woff2`-Schriften aus `node_modules/katex/dist/` nach `public/assets/katex/` kopieren und `VERSION.txt` nachführen.
-- Vor dem Commit: Links und Dateinamen auf exakte Schreibweise prüfen, Darstellung auf Handybreite bedenken.
-- Commit-Nachrichten kurz und auf Deutsch, z. B. `Blog: Beitrag zu IfcOpenShell` oder `Arbeiten: PDF Projektarbeit BFH`.
+## Maybe later
+- **Baukontrolle web app** once finished: standalone file `public/projekte/baukontrolle/index.html` and first entry under "Projekte" with a Demo button (`target="_blank"`). Sample models only (e.g. FZK-Haus), never client data. Fonts local.
+- **Newsletter** via Buttondown (free plan, manual sending): needs a sign-up form, double opt-in and an update of the privacy pages.
+- IFC viewer (That Open Engine), more engineering tools.
+- Markdown processor Sätteri (Astro 7 default) instead of remark/rehype once there is an official KaTeX solution. Affects only `astro.config.mjs` and `src/lib/remark-math-extras.mjs`; then check the test posts in `_tests/fixtures/blog`.
