@@ -7,7 +7,8 @@ const path = require('path');
 
 const SITE = 'https://josija-nydegger.ch';
 // Adressen der Referenz, die bewusst entfallen sind (gleiche Liste wie in website.test.js)
-const REMOVED = ['assets/katex/katex.min.js', 'assets/katex/contrib/auto-render.min.js'];
+// CNAME: nur für GitHub Pages, seit dem Umzug auf Cloudflare und dem Umbenennen des Repos (November 2026) entfernt
+const REMOVED = ['assets/katex/katex.min.js', 'assets/katex/contrib/auto-render.min.js', 'CNAME'];
 
 let fails = 0;
 const ok = (name, cond, info) => { if (!cond) fails++; console.log((cond ? 'OK  ' : 'FAIL') + ' ' + name + (cond || info === undefined ? '' : ': ' + info)); };
@@ -42,8 +43,10 @@ const get = (url, opts = {}) => fetch(url, { redirect: 'manual', headers: BROWSE
   ok('www → ohne www', [301, 308].includes(www.status) && www.headers.get('location').startsWith(SITE + '/'), www.status + ' ' + www.headers.get('location'));
   const http = await get('http://josija-nydegger.ch/');
   ok('http → https', [301, 308].includes(http.status) && http.headers.get('location').startsWith('https://'), http.status + ' ' + http.headers.get('location'));
-  const gh = await get('https://josija-nydegger.github.io/cv.html');
-  ok('github.io → eigene Domain', gh.status === 301 && gh.headers.get('location') === SITE + '/cv.html', gh.status + ' ' + gh.headers.get('location'));
+  // GitHub Pages ist aus (Repo umbenannt): unter github.io keine zweite Kopie der Website
+  const gh = await get('https://josija-nydegger.github.io/');
+  ok('github.io ohne Kopie der Website (404)', gh.status === 404, gh.status);
+
   const missing = await get(SITE + '/gibt-es-nicht/');
   ok('Unbekannte Adresse → eigene 404-Seite', missing.status === 404 && (await missing.text()).includes('PAGE NOT FOUND'));
 

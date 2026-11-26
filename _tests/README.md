@@ -48,7 +48,7 @@ Die Werkzeuge, mit denen beim Wechsel Seitenköpfe und Inhalte 1:1 verglichen wu
 node _tests/live-pruefung.js
 ```
 
-braucht Internet. Ruft alle Adressen der Referenz auf <https://josija-nydegger.ch> ab und prüft Umleitungen (www, http, github.io, /en), Google-Bestätigung und 404-Seite. Sinnvoll nach Änderungen an Domain, DNS oder der Cloudflare-Konfiguration.
+braucht Internet. Ruft alle Adressen der Referenz auf <https://josija-nydegger.ch> ab und prüft Umleitungen (www, http, .html, /en), Google-Bestätigung und 404-Seite. Sinnvoll nach Änderungen an Domain, DNS oder der Cloudflare-Konfiguration.
 
 ## Neue Tools
 

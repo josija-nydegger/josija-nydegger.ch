@@ -1,7 +1,7 @@
 # Website mit Astro bauen, prüfen und auf Cloudflare Workers veröffentlichen.
 # Pull Requests: nur bauen und prüfen. Push auf main: zusätzlich veröffentlichen.
 # Voraussetzung: Repo-Secrets CLOUDFLARE_API_TOKEN (Vorlage "Edit Cloudflare Workers") und CLOUDFLARE_ACCOUNT_ID.
-# Bis November 2026 GitHub Pages; Konfiguration für Cloudflare: wrangler.jsonc und _cloudflare/worker.js.
+# Bis November 2026 GitHub Pages; Konfiguration für Cloudflare: wrangler.jsonc und public/_redirects.
 name: Website bauen und veröffentlichen
 
 on:
