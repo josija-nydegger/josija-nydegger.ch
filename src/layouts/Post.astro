@@ -2,6 +2,7 @@
 // Layout für Blogbeiträge (baut auf Base auf).
 // Zeigt Datum, Lesezeit und Links zum älteren/neueren Beitrag derselben Sprache.
 // Zwischentitel bekommen links ein graues # (sichtbar beim Darüberfahren), das den Link zum Abschnitt kopiert.
+// Auf Touch-Geräten gibt es kein #: Tippen auf den Titel springt zum Abschnitt (Adresse mit #id).
 import Base from './Base.astro';
 import { i18n, formatDate } from '../data/i18n';
 import { getPosts, neighbours, readingTime, type Post } from '../lib/posts';
@@ -48,11 +49,19 @@ const { older, newer } = neighbours(await getPosts(post.lang), post);
       a.textContent = '#';
       a.setAttribute('aria-label', label);
       a.title = label;
+      const jump = () => {
+        history.replaceState(null, '', a.getAttribute('href'));
+        h.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      };
+      // Touch-Geräte: Tippen auf den Titel (nicht auf einen Link darin) springt nur zum Abschnitt
+      h.addEventListener('click', e => {
+        if (!matchMedia('(hover: none)').matches || (e.target as Element).closest('a')) return;
+        jump();
+      });
       a.addEventListener('click', async e => {
         e.preventDefault();
         const url = location.origin + location.pathname + a.getAttribute('href');
-        history.replaceState(null, '', a.getAttribute('href'));
-        h.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        jump();
         // Ohne Rückmeldung; klappt das Kopieren nicht, steht die Adresse trotzdem in der Adresszeile
         try { await navigator.clipboard.writeText(url); } catch { /* nichts */ }
       });
