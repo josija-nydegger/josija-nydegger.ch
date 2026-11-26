@@ -19,7 +19,7 @@ Reference for anything touching the domain, DNS, Cloudflare or the deploy pipeli
 - `not_found_handling: "404-page"`: unknown URLs get `404.html` with status 404.
 - `public/_redirects`: permanent 301 redirects for the former `.html` URLs (`/cv.html`, `/en/cv.html`, `/datenschutz.html`, `/en/privacy.html`, the two QR-tool pages). Cloudflare does not serve the file itself. New pages need no entry.
 - Custom domain `josija-nydegger.ch` via `routes` with `custom_domain: true`.
-- `workers_dev: false` and `preview_urls: false`: the site exists only on the own domain.
+- `workers_dev: false`: no public copy under `*.workers.dev`. `preview_urls: true`: version URLs for previews (see "Previews"), protected by Cloudflare Access.
 - `observability` is on: Cloudflare can log requests for up to 7 days (mentioned on the privacy pages). Used only for troubleshooting.
 - The Google verification file `google385c59b71b73dd03.html` is redirected (307) to `/google385c59b71b73dd03` with the same content; the DNS TXT record verifies the domain as well.
 
@@ -28,6 +28,14 @@ Reference for anything touching the domain, DNS, Cloudflare or the deploy pipeli
 - `.github/workflows/deploy.yml`: on every push and pull request: `npm ci`, `npm run check`, `npm test`, `npm run build`. Only on `main`: `npx wrangler deploy`.
 - Repo secrets: `CLOUDFLARE_API_TOKEN` (template "Edit Cloudflare Workers" plus Zone → DNS → Edit for `josija-nydegger.ch`) and `CLOUDFLARE_ACCOUNT_ID`.
 - If a step fails, nothing is deployed and the previous version stays online.
+
+## Previews
+
+- Every pull request from a branch of this repo also runs `npx wrangler versions upload --preview-alias <branch>`: a new version is uploaded but not deployed. The alias is the branch name (lowercase, other characters → `-`, at most 40 characters), so each branch keeps the same URL: `https://<alias>-josija-nydegger.<account subdomain>.workers.dev`.
+- The links are in the job summary of the Action run (PR → Checks → run → Summary). Deliberately not posted as a PR comment, so GitHub sends no email.
+- **Cloudflare Access protects all version URLs** (dashboard: Workers & Pages → `josija-nydegger` → tab **Domains** → Worker URL → **Preview** (turn on, then enable Cloudflare Access; policy: only the owner's email address). Cloudflare also sends `X-Robots-Tag: noindex` on `workers.dev` previews automatically. The setting `preview_urls` takes effect with `wrangler deploy`, not with `versions upload`). Sign-in with a one-time code by email, then valid for the session duration set in Access. Search engines cannot reach the previews, so no duplicate content. Without Access the previews would be public: never remove it.
+- Umami does not count previews (`data-domains` allows only the own domain). Cloudflare is already the host, so the privacy pages need no change.
+- Previews use the same build and the same routing as production.
 
 ## Testing like a browser
 
