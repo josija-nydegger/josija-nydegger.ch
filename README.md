@@ -24,7 +24,7 @@ Formeln in Blogbeiträgen (LaTeX mit `$…$` und `$$…$$`) setzt [KaTeX](https:
 | `src/content/blog/`, `src/content/blog/en/` | Blogbeiträge in Markdown (Deutsch, Englisch) |
 | `src/layouts/`, `src/components/` | Gemeinsames Layout, Blog-Layout, Menü, Link-Vorschau, strukturierte Daten |
 | `src/data/` | Grundeinstellungen, feste Texte in beiden Sprachen, Liste der Tools |
-| `public/style.css` | Gesamtes Design inkl. Dark Mode und Druckansicht |
+| `src/styles/style.css` | Gesamtes Design inkl. Dark Mode und Druckansicht |
 | `public/tools/` | Web-Tools (eigenständige Seiten) |
 | `public/arbeiten/` | PDFs der Arbeiten |
 | `public/images/` | Profilbild, Link-Vorschau, Projekt-Icons, Blogbilder |

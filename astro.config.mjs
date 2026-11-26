@@ -11,6 +11,11 @@ export default defineConfig({
   // Ausgabe spiegelt src/pages: cv.astro → /cv.html, en/index.astro → /en/index.html
   build: { format: 'preserve' },
 
+  // Interne Seiten vorladen, sobald die Maus kurz auf einem Link ruht (oder er den Fokus bekommt):
+  // Der Klick fühlt sich dann sofort an. Nur das HTML, keine Skripte, darum keine falschen Aufrufe in der Statistik.
+  // Ausgenommen sind Links mit data-astro-prefetch="false" (z. B. PDFs).
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
+
   markdown: {
     // Wie bisher keine Farben für Code-Blöcke
     syntaxHighlight: false,

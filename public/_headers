@@ -1,0 +1,18 @@
+# Cloudflare: wie lange Browser Dateien speichern dürfen (siehe _docs/hosting.md, "Caching").
+# HTML-Seiten haben keine Regel: Cloudflare schickt dort "max-age=0, must-revalidate",
+# damit ein Deploy sofort sichtbar ist. Der Service Worker des Einheiten-Umrechners bleibt ebenfalls ohne Regel.
+
+# Von Astro gebündelt, Prüfsumme im Namen: ändert sich der Inhalt, ändert sich der Name
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Ohne Prüfsumme im Namen, ändern sich selten: einen Tag speichern, danach eine Woche lang
+# sofort aus dem Speicher zeigen und im Hintergrund neu prüfen
+/images/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/assets/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/favicon*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/apple-touch-icon.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
