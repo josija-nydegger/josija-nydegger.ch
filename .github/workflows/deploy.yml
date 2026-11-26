@@ -1,6 +1,7 @@
-# Website mit Astro bauen, prüfen und auf GitHub Pages veröffentlichen.
+# Website mit Astro bauen, prüfen und auf Cloudflare Workers veröffentlichen.
 # Pull Requests: nur bauen und prüfen. Push auf main: zusätzlich veröffentlichen.
-# Voraussetzung (seit 27.10.2026 eingestellt): Repo-Einstellungen → Pages → Source "GitHub Actions".
+# Voraussetzung: Repo-Secrets CLOUDFLARE_API_TOKEN (Vorlage "Edit Cloudflare Workers") und CLOUDFLARE_ACCOUNT_ID.
+# Bis November 2026 GitHub Pages; Konfiguration für Cloudflare: wrangler.jsonc und _cloudflare/worker.js.
 name: Website bauen und veröffentlichen
 
 on:
@@ -14,7 +15,7 @@ permissions:
 
 # Nie zwei Veröffentlichungen gleichzeitig; eine laufende wird nicht abgebrochen
 concurrency:
-  group: pages-${{ github.ref }}
+  group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -33,20 +34,9 @@ jobs:
         run: npm test
       - name: Website bauen
         run: npm run build
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-
-  deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Auf Cloudflare veröffentlichen
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

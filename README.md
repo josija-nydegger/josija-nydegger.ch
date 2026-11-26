@@ -14,7 +14,7 @@ Persönliche Website von **Josija Nydegger**: Bauingenieurwesen, BIM und Digital
 
 ## Technik
 
-Bewusst schlicht: statisches HTML und CSS, erzeugt mit [Astro](https://astro.build), gebaut und veröffentlicht per GitHub Action auf GitHub Pages.
+Bewusst schlicht: statisches HTML und CSS, erzeugt mit [Astro](https://astro.build), gebaut und veröffentlicht per GitHub Action auf Cloudflare Workers.
 Keine UI-Frameworks, keine Tracker und kein externes JavaScript.
 Formeln in Blogbeiträgen (LaTeX mit `$…$` und `$$…$$`) setzt [KaTeX](https://katex.org) beim Build; Stylesheet und Schriften liegen lokal in `public/assets/katex/`.
 

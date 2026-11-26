@@ -1,0 +1,19 @@
+// Cloudflare Workers: veröffentlicht den Astro-Build (dist/) als statische Dateien.
+// Veröffentlichen: per GitHub Action (.github/workflows/deploy.yml) bei jedem Push auf main.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "josija-nydegger",
+  "main": "_cloudflare/worker.js",
+  "compatibility_date": "2026-11-10",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Adressen genau wie gebaut: /cv.html bleibt /cv.html (Ordner-Adressen regelt _cloudflare/worker.js)
+    "html_handling": "none",
+    "not_found_handling": "404-page"
+  },
+  // Eigene Domain; www leitet eine Redirect-Regel der Zone auf die Domain ohne www um
+  "routes": [{ "pattern": "josija-nydegger.ch", "custom_domain": true }],
+  "workers_dev": true,
+  "observability": { "enabled": true }
+}
