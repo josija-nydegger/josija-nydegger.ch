@@ -16,6 +16,8 @@
   },
   // Eigene Domain; www leitet eine Redirect-Regel der Zone auf die Domain ohne www um
   "routes": [{ "pattern": "josija-nydegger.ch", "custom_domain": true }],
-  "workers_dev": true,
+  // Keine zweite Adresse unter *.workers.dev und keine Vorschau-Adressen (sonst doppelte Inhalte für Suchmaschinen)
+  "workers_dev": false,
+  "preview_urls": false,
   "observability": { "enabled": true }
 }
