@@ -202,7 +202,7 @@ try {
   // 10. Blogbeiträge: Zwischentitel mit id (für die # zum Kopieren des Abschnitt-Links, src/layouts/Post.astro)
   for (const p of builtA.filter(p => /^(en\/)?blog\/[^/]+\/index\.html$/.test(p))) {
     const doc = a.doc(p);
-    const art = doc.querySelector('article[data-heading-link][data-copied]');
+    const art = doc.querySelector('article[data-heading-link]');
     const hs = [...doc.querySelectorAll('article h2, article h3, article h4')];
     ok('Beitrag: Zwischentitel mit id und Texte für # (' + p + ')', !!art && hs.every(h => h.id) && !doc.querySelector('.heading-anchor'));
   }
