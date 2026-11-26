@@ -18,10 +18,20 @@ Reference for anything touching the domain, DNS, Cloudflare or the deploy pipeli
 - `html_handling: "auto-trailing-slash"`: `cv.html` is served at `/cv` (`/cv.html` → `/cv`), `folder/index.html` at `/folder/` (`/folder` and `/folder/index.html` → `/folder/`, each 307).
 - `not_found_handling: "404-page"`: unknown URLs get `404.html` with status 404.
 - `public/_redirects`: permanent 301 redirects for the former `.html` URLs (`/cv.html`, `/en/cv.html`, `/datenschutz.html`, `/en/privacy.html`, the two QR-tool pages). Cloudflare does not serve the file itself. New pages need no entry.
+- `public/_headers`: browser caching (see "Caching").
 - Custom domain `josija-nydegger.ch` via `routes` with `custom_domain: true`.
 - `workers_dev: false`: no public copy under `*.workers.dev`. `preview_urls: true`: version URLs for previews (see "Previews"), protected by Cloudflare Access.
 - `observability` is on: Cloudflare can log requests for up to 7 days (mentioned on the privacy pages). Used only for troubleshooting.
 - The Google verification file `google385c59b71b73dd03.html` is redirected (307) to `/google385c59b71b73dd03` with the same content; the DNS TXT record verifies the domain as well.
+
+## Caching
+
+- HTML pages, `/style.css` and the unit converter's `sw.js` have no rule: Cloudflare sends `public, max-age=0, must-revalidate`, so a deploy is visible at once (Cloudflare's edge still serves them from its cache, `CF-Cache-Status: HIT`).
+- `/_astro/*` (bundled by Astro, content hash in the file name, including the site design): `max-age=31536000, immutable`. A changed file gets a new name, so this never shows stale content.
+- `/images/*`, `/assets/*` (KaTeX), favicons, `apple-touch-icon.png`: no hash in the name, so only `max-age=86400, stale-while-revalidate=604800`. Replacing such a file in place can show the old one for up to a day; for a lasting change, use a new file name.
+- Pages are prefetched on hover (`prefetch` in `astro.config.mjs`, about 1 KB of JavaScript on every page): only the HTML, no scripts run, so no extra Umami page views. PDF links are excluded by a line in `Base.astro`.
+- Check after a deploy: `curl -sI https://josija-nydegger.ch/_astro/<file>.css` shows `immutable`.
+- Measured November 2026 from the owner's laptop: its network has broken IPv6, so every new connection to Cloudflare (which publishes IPv6 addresses) waits ~200 ms for the IPv4 fallback. That is the network, not the site; over IPv4 the first byte arrives after ~80 ms.
 
 ## Deployment
 

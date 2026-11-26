@@ -6,6 +6,8 @@ import Seo from '../components/Seo.astro';
 import PersonJsonLd from '../components/PersonJsonLd.astro';
 import Umami from '../components/Umami.astro';
 import Search from '../components/Search.astro';
+// Gesamtes Design; Astro legt es unter /_astro/ mit Prüfsumme im Namen ab (dauerhaft im Browser gespeichert)
+import '../styles/style.css';
 import { i18n, otherLang, type Lang } from '../data/i18n';
 import { site, absoluteUrl, pagePath } from '../data/site';
 import { counterpartUrl, type Post } from '../lib/posts';
@@ -48,7 +50,6 @@ const deUrl = lang === 'de' ? path : otherUrl;
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="stylesheet" href="/style.css">
   <Umami />
   <slot name="head" />
 </head>
@@ -121,6 +122,8 @@ const deUrl = lang === 'de' ? path : otherUrl;
     var a = e.target.closest && e.target.closest('a[href$=".pdf"]');
     if (a && window.umami) window.umami.track("PDF-Download", { datei: a.pathname.split("/").pop() });
   });
+  // PDFs nicht vorladen (astro.config.mjs, prefetch): sonst lädt schon das Darüberfahren die ganze Datei
+  document.querySelectorAll('a[href$=".pdf"]').forEach(function (a) { a.dataset.astroPrefetch = "false"; });
 
   // Lebenslauf: Button "Als PDF speichern" öffnet den Druckdialog.
   // Während des Druckens wird der Seitentitel (= vorgeschlagener Dateiname) durch data-print ersetzt.

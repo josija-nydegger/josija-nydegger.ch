@@ -28,7 +28,7 @@ Read the reference docs when a task touches their topic:
 ### Look (strict, unchanged)
 
 - Clean and calm: one column, generous whitespace, lines instead of cards. No decorative animations; small functional transitions are fine if they respect `prefers-reduced-motion`.
-- The whole site design lives in `public/style.css`: colors as CSS variables (light `#fcfcfb`, dark `#151515`, `--text`, `--muted`, `--border`, `--tag-bg` …), dark mode via system setting and `data-theme`, print view. Reuse existing classes instead of inventing new styles. No CSS frameworks (no Tailwind, no Bootstrap).
+- The whole site design lives in `src/styles/style.css` (imported in `Base.astro`, published fingerprinted under `/_astro/`; the former URL `/style.css` stays via `src/pages/style.css.ts`): colors as CSS variables (light `#fcfcfb`, dark `#151515`, `--text`, `--muted`, `--border`, `--tag-bg` …), dark mode via system setting and `data-theme`, print view. Reuse existing classes instead of inventing new styles. No CSS frameworks (no Tailwind, no Bootstrap).
 - Every page must work at phone width and in dark mode.
 
 ### JavaScript (allowed, with rules)
@@ -57,7 +57,7 @@ Read the reference docs when a task touches their topic:
 ## Structure
 
 ```
-astro.config.mjs     Astro: domain, output format 'preserve', Markdown (remark/rehype, KaTeX, typography)
+astro.config.mjs     Astro: domain, output format 'preserve', prefetch on hover (PDF links excluded in Base.astro), Markdown (remark/rehype, KaTeX, typography)
 wrangler.jsonc       Cloudflare: name, domain, static assets from dist/ (no Worker code), see _docs/hosting.md
 package.json         Dependencies (exact versions) and scripts: dev, build, preview, check, test
 .github/workflows/deploy.yml  Type check, tests, build, deploy (see "Checking")
@@ -75,13 +75,14 @@ src/
   lib/feed.ts        Atom feeds
   lib/einheiten.ts   Calculation core of the unit converter (pure TypeScript functions)
   lib/remark-math-extras.mjs  $$…$$ alone in a paragraph = block formula; remembers whether a post has formulas
+  styles/style.css   The whole site design
   pages/             All pages and endpoints, path = URL (see "URLs")
     index, cv, datenschutz, 404, tools/index, blog/index, blog/[slug]     German (404 in English, one for all)
     en/index, en/cv, en/privacy, en/tools/index, en/blog/index, en/blog/[slug]   English
     feed.xml.ts, en/feed.xml.ts, sitemap.xml.ts                         Feeds and sitemap
+    style.css.ts                                                        Former URL /style.css (same content as src/styles/style.css)
     tools/einheiten/index.astro                                         Unit converter (standalone, no Base layout)
 public/              Published unchanged
-  style.css          The whole site design
   tools/<name>/      One tool: index.html (standalone page, German only) and icons/
   QR-tool/           Unchanged copy of QR-Reader.html and QR-Streamer.html from the repo QR-tool; change them there and copy here. Exempt from the site rules (CDN libraries, no Umami, no privacy footer); the tests skip this folder
   assets/katex/      KaTeX 0.16.47 (MIT): only katex.min.css and .woff2 fonts
@@ -89,6 +90,7 @@ public/              Published unchanged
   arbeiten/          PDFs of academic works, original only
   favicon.svg, favicon.ico, favicon-32.png, apple-touch-icon.png   Site icon "Statik & Code" (source: G:\Meine Ablage\personal_website\favicon 3.0)
   _redirects         Cloudflare: 301 from the former .html URLs (/cv.html → /cv …)
+  _headers           Cloudflare: browser caching (/_astro/ one year immutable; images, icons, KaTeX one day), see _docs/hosting.md
   robots.txt, google385c59b71b73dd03.html   Sitemap pointer; Google Search Console verification (do not delete or change)
 _docs/               Reference docs for Claude (English), see table above
 _notizen/            Working notes (German)
@@ -106,7 +108,7 @@ Only what Astro builds from `src/pages/` plus the contents of `public/` is publi
 - `build.format: 'preserve'`: `src/pages/foo.astro` → file `foo.html`, served by Cloudflare as `/foo`; `src/pages/foo/index.astro` → `/foo/`.
 - Always link pages without `.html` (`/cv`, `/datenschutz`, `/en/privacy`). `pagePath()` strips `.html` for canonical and hreflang, the sitemap does too. Former `.html` URLs redirect via `public/_redirects`; new pages need no entry there.
 - New page: new file in `src/pages/` wrapped in `<Base lang="…" ref="…" title="…" description="…">`. If it has a counterpart in the other language, add both URLs under one `ref` in `src/data/pages.ts`. The sitemap picks up new pages automatically.
-- Internal links and asset paths always absolute (`/style.css`, `/images/...`). Absolute URLs always with `https://josija-nydegger.ch` (or `absoluteUrl()` from `src/data/site.ts`).
+- Internal links and asset paths always absolute (`/images/...`, `/tools/...`). Absolute URLs always with `https://josija-nydegger.ch` (or `absoluteUrl()` from `src/data/site.ts`).
 - In `.astro` files, curly braces in text are code: write `&#123;` / `&#125;`.
 
 ## Conventions
@@ -139,7 +141,7 @@ Only what Astro builds from `src/pages/` plus the contents of `public/` is publi
 - New main pages get their own `ref` in `src/data/pages.ts` and, if they belong in the menu, an entry in `src/components/Nav.astro` (both languages). The CV has no back button; the menu replaces it.
 
 ### CV and structured data
-- The CV has its own print view (`@media print` in `style.css`): always light, no navigation, no page breaks inside an entry.
+- The CV has its own print view (`@media print` in `src/styles/style.css`): always light, no navigation, no page breaks inside an entry.
 - Changes to employer, studies or place of residence also go into `src/components/PersonJsonLd.astro` (currently Baukonstrukt AG since November 2026; BSB + Partner 2024 to October 2026 with `endDate`).
 
 ### Bilingual setup

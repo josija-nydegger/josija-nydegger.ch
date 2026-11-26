@@ -6,7 +6,7 @@ Reference for building and changing the tools under `/tools/`. Principles (priva
 
 1. **Location:** `public/tools/<name>/index.html`, short folder name, lowercase, no umlauts. Astro copies it unchanged (no layout). One file with its own `<style>` and `<script>` is the default. A tool that needs bundled TypeScript or npm libraries can be an Astro page instead (`src/pages/tools/<name>/index.astro`, like the unit converter).
 2. **List:** add an entry at the top of `src/data/tools.ts` (newest first) with `url`, `year` and `title`/`description`/`tags` in `de` and `en`. `/tools/`, `/en/tools/` and the sitemap update automatically.
-3. **Look:** copy the color variables from `public/style.css`, same font, calm layout with lines instead of cards. Start from an existing tool.
+3. **Look:** copy the color variables from `src/styles/style.css`, same font, calm layout with lines instead of cards. Start from an existing tool.
 4. **Head:**
    - `lang="de-CH"`; the color scheme inline script as the first script (prevents flashing); `<title>Name | Josija Nydegger</title>`; `meta description`; favicons.
    - Link preview by hand: `canonical`, `og:type`, `og:site_name`, `og:locale` (`de_CH`), `og:title`, `og:description`, `og:url`, `twitter:card` = `summary`. **No `og:image`**, so WhatsApp, Teams etc. show the small icon (`apple-touch-icon`) instead of a large image.

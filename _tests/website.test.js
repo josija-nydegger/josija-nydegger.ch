@@ -159,13 +159,17 @@ try {
   ok('Kein Service Worker und kein Manifest im Hauptordner', !builtA.some(p => /^(sw|service-worker|registerSW)\.js$|^manifest\.(webmanifest|json)$/.test(p)));
   const ehHtml = a.read(EH + 'index.html');
   ok('Einheiten: Manifest eingebunden', ehHtml.includes('<link rel="manifest" href="/' + EH + 'manifest.webmanifest">'));
-  const ehScripts = [...ehHtml.matchAll(/<script type="module" src="(\/_astro\/[^"]+\.js)"/g)].map(m => m[1]);
+  // Skripte, die jede Seite hat (Vorladen von Links, astro.config.mjs), zählen nicht als eigenes Skript des Tools
+  const moduleScripts = html => [...html.matchAll(/<script type="module" src="(\/_astro\/[^"]+\.js)"/g)].map(m => m[1]);
+  const shared = moduleScripts(a.read('index.html'));
+  const ehScripts = moduleScripts(ehHtml).filter(s => !shared.includes(s));
   ok('Einheiten: genau ein eigenes Skript unter /_astro/', ehScripts.length === 1, ehScripts.join(' '));
   const ehJs = ehScripts.map(s => a.read(s.slice(1))).join('');
   ok('Einheiten: Service Worker mit Scope des Tools registriert', ehJs.includes('/' + EH + 'sw.js') && new RegExp('scope:\\s*["\'`]/' + EH + '["\'`]').test(ehJs));
   const others = builtA.filter(p => p.endsWith('.html') && p !== EH + 'index.html');
   ok('Übrige Seiten ohne Manifest', !others.some(p => /rel="manifest"/.test(a.read(p))), others.filter(p => /rel="manifest"/.test(a.read(p))).join(' '));
-  ok('Übrige Seiten ohne Service Worker', !others.some(p => /serviceWorker|\/_astro\//.test(a.read(p))), others.filter(p => /serviceWorker|\/_astro\//.test(a.read(p))).join(' '));
+  const withSw = others.filter(p => { const h = a.read(p); return /serviceWorker/.test(h) || ehScripts.some(s => h.includes(s)); });
+  ok('Übrige Seiten ohne Service Worker', withSw.length === 0, withSw.join(' '));
   ok('Einheiten: Tool funktioniert ohne fremde Server (keine externen Skripte ausser der Statistik)', !/<script[^>]+src="https?:/.test(ehHtml.replace(UMAMI, '')));
 
   // 8. Eigenes iOS-Home-Bildschirm-Symbol pro Tool: 180×180, PNG ohne Alphakanal, mit Namen
@@ -199,6 +203,21 @@ try {
   ok('Event: Lebenslauf als PDF', ['cv.html', 'en/cv.html'].every(p => a.read(p).includes('data-umami-event="Lebenslauf als PDF"')));
   ok('Event: Übergabe ans Balken-Tool', a.read('tools/lastkombinationen/index.html').includes('window.umami.track("Ins Balken-Tool übernommen")'));
   ok('Datenschutz: E-Mail kodiert eingebunden', ['datenschutz.html', 'en/privacy.html'].every(p => a.read(p).includes('<a class="email"></a>')));
+  // Ladezeit: Design mit Prüfsumme unter /_astro/, frühere Adresse /style.css bleibt, Cache-Regeln, Vorladen
+  const basePages = pages.filter(p => !p.startsWith('tools/') || p === 'tools/index.html');
+  const cssLinks = p => [...a.read(p).matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(m => m[1]).filter(h => !h.includes('katex'));
+  for (const p of basePages) {
+    const l = cssLinks(p);
+    ok('Design über /_astro/ mit Prüfsumme eingebunden: ' + p, l.length === 1 && /^\/_astro\/[\w.-]+\.css$/.test(l[0]) && a.has(l[0].slice(1)), l.join(' '));
+  }
+  const srcCss = fs.readFileSync(path.join(__dirname, '..', 'src', 'styles', 'style.css'), 'utf8');
+  ok('Frühere Adresse /style.css liefert das ganze Design', a.has('style.css') && a.read('style.css') === srcCss);
+  const headers = a.has('_headers') ? a.read('_headers') : '';
+  ok('_headers: /_astro/ ein Jahr und unveränderlich', /^\/_astro\/\*\r?\n\s+Cache-Control: public, max-age=31536000, immutable\r?$/m.test(headers));
+  ok('_headers: keine Regel für HTML, Service Worker oder /style.css', !/^\/(\*|tools|style\.css|[^\n]*\.html)/m.test(headers));
+  ok('Vorladen: Skript auf jeder Seite', shared.length === 1 && basePages.every(p => a.read(p).includes(shared[0])));
+  ok('Vorladen: PDFs ausgenommen', a.read('index.html').includes('a.dataset.astroPrefetch = "false"'));
+
   // 10. Blogbeiträge: Zwischentitel mit id (für die # zum Kopieren des Abschnitt-Links, src/layouts/Post.astro)
   for (const p of builtA.filter(p => /^(en\/)?blog\/[^/]+\/index\.html$/.test(p))) {
     const doc = a.doc(p);
