@@ -55,7 +55,7 @@ public/              Wird unverändert veröffentlicht
   images/            profil.jpg, og-image.jpg, projekte/ für Projekt-Icons, blog/ für Beitragsbilder
   arbeiten/          PDFs von Arbeiten (Projekt-, Bachelorarbeiten), nur im Original
   favicon.svg, favicon.ico (16/32/48), favicon-32.png, apple-touch-icon.png (180×180, randlos dunkelblau, iOS rundet selbst)  Website-Symbol "Statik & Code", Quelle: G:\Meine Ablage\personal_website\favicon 3.0
-  QR-tool/           QR-Reader.html und QR-Streamer.html, unveränderte Kopie aus dem Repo QR-tool (dort bis November 2026 per GitHub Pages unter dieser Domain); Änderungen dort machen und hierher kopieren
+  QR-tool/           QR-Reader.html und QR-Streamer.html, unveränderte Kopie aus dem Repo QR-tool (dort bis November 2026 per GitHub Pages unter dieser Domain); Änderungen dort machen und hierher kopieren. Ausnahme von den Regeln der Website (lädt Bibliotheken per CDN, ohne Statistik und Datenschutz-Fusszeile); die Tests nehmen den Ordner aus
   CNAME              Eigene Domain für GitHub Pages, hält die Umleitung von github.io aufrecht (nicht löschen)
   robots.txt         Verweis auf die Sitemap
   google385c59b71b73dd03.html  Bestätigung Google Search Console
