@@ -70,7 +70,7 @@ src/
   data/tools.ts      Tool list for /tools/ and /en/tools/ (title, description, tags in DE and EN)
   layouts/Base.astro Shared layout: <head>, hreflang, menu, language switch, footer, inline scripts
   layouts/Post.astro Blog post layout (date, reading time, older/newer)
-  components/        Nav, Seo (title, link preview, JSON-LD), BlogList (3 newest on the home page), PersonJsonLd, Umami
+  components/        Nav, Seo (title, link preview, JSON-LD), BlogList (3 newest on the home page), PersonJsonLd, Umami, ToolPrefetch (tool list: load a tool page on hover)
   lib/posts.ts       Posts: date/language/URL from the file name, reading time, older/newer, counterpart, postUrl()
   lib/feed.ts        Atom feeds
   lib/einheiten.ts   Calculation core of the unit converter (pure TypeScript functions)

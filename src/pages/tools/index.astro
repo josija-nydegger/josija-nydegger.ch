@@ -2,6 +2,7 @@
 // Übersicht der Tools (Deutsch), /tools/. Liste aus src/data/tools.ts.
 import Base from '../../layouts/Base.astro';
 import { tools } from '../../data/tools';
+import ToolPrefetch from '../../components/ToolPrefetch.astro';
 ---
 <Base
   lang="de"
@@ -17,7 +18,7 @@ import { tools } from '../../data/tools';
     {tools.map(tool => (
       <li class="item">
         <div class="item-head">
-          <p class="item-title"><a href={tool.url}>{tool.title.de}</a></p>
+          <p class="item-title"><a href={tool.url} data-prefetch>{tool.title.de}</a></p>
           <span class="item-year">{tool.year}</span>
         </div>
         <p class="item-sub">{tool.description.de}</p>
@@ -28,4 +29,5 @@ import { tools } from '../../data/tools';
 </section>
 
 <p class="page-note"><strong>Hinweis:</strong> Hilfsmittel für Studium und Vordimensionierung. Sie ersetzen keine Prüfung durch eine fachkundige Person.</p>
+<ToolPrefetch />
 </Base>

@@ -2,6 +2,7 @@
 // Übersicht der Tools (English), /en/tools/. Liste aus src/data/tools.ts.
 import Base from '../../../layouts/Base.astro';
 import { tools } from '../../../data/tools';
+import ToolPrefetch from '../../../components/ToolPrefetch.astro';
 ---
 <Base
   lang="en"
@@ -17,7 +18,7 @@ import { tools } from '../../../data/tools';
     {tools.map(tool => (
       <li class="item">
         <div class="item-head">
-          <p class="item-title"><a href={tool.url}>{tool.title.en}</a></p>
+          <p class="item-title"><a href={tool.url} data-prefetch>{tool.title.en}</a></p>
           <span class="item-year">{tool.year}</span>
         </div>
         <p class="item-sub">{tool.description.en}</p>
@@ -28,4 +29,5 @@ import { tools } from '../../../data/tools';
 </section>
 
 <p class="page-note"><strong>Note:</strong> Aids for studies and preliminary design. They do not replace a check by a qualified engineer.</p>
+<ToolPrefetch />
 </Base>
