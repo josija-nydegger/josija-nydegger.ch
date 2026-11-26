@@ -1,6 +1,7 @@
 ---
 // Blog-Übersicht (Deutsch), /blog/: alle deutschen Beiträge, neueste zuerst, mit Beschreibung und Tags.
 import Base from '../../layouts/Base.astro';
+import Filter from '../../components/Filter.astro';
 import { i18n, formatDate } from '../../data/i18n';
 import { getPosts } from '../../lib/posts';
 
@@ -13,14 +14,17 @@ const posts = await getPosts('de');
   title="Blog"
   description="Beiträge zu Bauingenieurwesen, BIM, Digital Construction und eigenen Projekten."
 >
+<div class="page-head">
 <h1 class="page-title">Blog <a class="rss" href={t.feedUrl} title={t.rssTitle}>RSS</a></h1>
 <p class="page-intro">Beiträge zu Bauingenieurwesen, BIM, Digital Construction und eigenen Projekten, neueste zuerst.</p>
+</div>
+<Filter lang="de" tags={posts.flatMap(p => p.tags)} />
 
 <section>
   {posts.length > 0 ? (
     <ul class="list tool-list">
       {posts.map(post => (
-        <li class="item">
+        <li class="item" data-tags={post.tags.join('|')}>
           <div class="item-head">
             <p class="item-title"><a href={post.url}>{post.title}</a></p>
             <span class="item-year">{formatDate(post.date, 'de')}</span>

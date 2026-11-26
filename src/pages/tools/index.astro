@@ -1,6 +1,7 @@
 ---
 // Übersicht der Tools (Deutsch), /tools/. Liste aus src/data/tools.ts.
 import Base from '../../layouts/Base.astro';
+import Filter from '../../components/Filter.astro';
 import { tools } from '../../data/tools';
 ---
 <Base
@@ -9,15 +10,18 @@ import { tools } from '../../data/tools';
   title="Tools"
   description="Kleine Web-Tools zu Tragwerken, Statik und BIM. Sie laufen direkt im Browser, Eingaben verlassen den Rechner nicht."
 >
+<div class="page-head">
 <h1 class="page-title">Tools</h1>
 <p class="page-intro">Kleine Web-Tools zu Tragwerken, Statik und BIM, die ich für Studium und Arbeit entwickle. Sie laufen direkt im Browser; Eingaben verlassen den Rechner nicht.</p>
+</div>
+<Filter lang="de" tags={tools.flatMap(x => x.tags.de)} />
 
 <section>
   <ul class="list tool-list">
     {tools.map(tool => (
-      <li class="item">
+      <li class="item" data-tags={tool.tags.de.join('|')}>
         <div class="item-head">
-          <p class="item-title"><a href={tool.url}>{tool.title.de}</a></p>
+          <p class="item-title"><img src={`${tool.url}icons/icon.svg`} alt="" width="40" height="40" loading="lazy"><a href={tool.url}>{tool.title.de}</a></p>
           <span class="item-year">{tool.year}</span>
         </div>
         <p class="item-sub">{tool.description.de}</p>

@@ -8,16 +8,18 @@ import Base from '../../layouts/Base.astro';
   title="Privacy"
   description="What data is processed when you visit josija-nydegger.ch: cookie-free visitor statistics with Umami, hosting on Cloudflare, tools without data transfer."
 >
+<div class="page-head">
 <h1 class="page-title">Privacy</h1>
 <p class="page-intro">In short: no cookies for statistics or advertising, no ads, no tracking across other websites. I count page views anonymously to see which content and tools are used.</p>
+</div>
 
-<section>
-  <h2>Controller</h2>
+<section class="sheet">
+  <h2 class="rail">Controller</h2>
   <p>Josija Nydegger, Lyss, Switzerland. Contact via <a href="https://www.linkedin.com/in/josija-nydegger">LinkedIn</a><span class="email-wrap" hidden> or by email at <a class="email"></a></span>.</p>
 </section>
 
-<section>
-  <h2>Visitor statistics with Umami</h2>
+<section class="sheet">
+  <h2 class="rail">Visitor statistics with Umami</h2>
   <p>For visitor statistics I use <a href="https://umami.is">Umami Cloud</a> (Umami Software, Inc., USA). The data is stored on servers in the EU. Umami does not set cookies and stores nothing on your device. It records:</p>
   <ul class="bullets">
     <li>the page visited (without the part after <code>?</code> or <code>#</code>, so inputs in the tools are not transmitted),</li>
@@ -30,34 +32,34 @@ import Base from '../../layouts/Base.astro';
   <p>The sole purpose is to improve the website and the tools. The data is not combined with other data and not shared.</p>
 </section>
 
-<section>
-  <h2>Hosting</h2>
+<section class="sheet">
+  <h2 class="rail">Hosting</h2>
   <p>The website and the domain's DNS records are hosted by <a href="https://www.cloudflare.com">Cloudflare</a> (Cloudflare, Inc., USA). Cloudflare delivers the pages through a worldwide network of data centers, usually from one near you. For every page request, Cloudflare processes technically necessary data such as IP address, time, requested address and browser details, among other things to fend off attacks. Requests may be logged for up to 7 days; I only look at these logs when troubleshooting. Cloudflare normally sets no cookies; only if a request looks suspicious and Cloudflare shows a security check may a technically necessary cookie be set. Input in the tools (after the <code>#</code>) is never sent to the server by your browser, so it never reaches Cloudflare either. Details are in <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's privacy policy</a>.</p>
   <p>The website's source code is public on <a href="https://github.com/josija-nydegger/josija-nydegger.ch">GitHub</a>. Visiting the website does not contact GitHub.</p>
 </section>
 
-<section>
-  <h2>Email</h2>
+<section class="sheet">
+  <h2 class="rail">Email</h2>
   <p>If you send me an email, it is stored by my email provider <a href="https://www.infomaniak.com/en">Infomaniak</a> (Infomaniak Network SA, Geneva, Switzerland). I only use your message and address to reply to you.</p>
 </section>
 
-<section>
-  <h2>Tools</h2>
+<section class="sheet">
+  <h2 class="rail">Tools</h2>
   <p>The tools run entirely in your browser. Inputs are not sent to any server; they are only kept in the address bar (after the <code>#</code>) so that a copied link opens the same values. The pages use your browser's local storage (<code>localStorage</code>) to remember the selected color scheme and some tool settings. This information never leaves your device and can be deleted in your browser settings.</p>
 </section>
 
-<section>
-  <h2>External links</h2>
+<section class="sheet">
+  <h2 class="rail">External links</h2>
   <p>Links to other websites (e.g. LinkedIn, GitHub) take you to their services, where their privacy policies apply. This website itself does not embed content from other providers, not even fonts. The only exception is the QR-Reader (see below).</p>
 </section>
 
-<section>
-  <h2>QR-Reader and QR-Streamer</h2>
+<section class="sheet">
+  <h2 class="rail">QR-Reader and QR-Streamer</h2>
   <p>The two pages under <code>/QR-tool/</code> come from my project <a href="https://github.com/josija-nydegger/QR-tool">QR-tool</a>. The QR-Reader loads code libraries (zbar-wasm, marked, DOMPurify, KaTeX) from the <a href="https://www.jsdelivr.com">jsDelivr</a> service; jsDelivr and its network operators receive your IP address and browser details (see <a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr's privacy policy</a>). The camera is only used with your permission; images are analyzed in your browser and not transmitted. These two pages are not counted in the visitor statistics.</p>
 </section>
 
-<section>
-  <h2>Your rights</h2>
+<section class="sheet">
+  <h2 class="rail">Your rights</h2>
   <p>Under the Swiss Federal Act on Data Protection (FADP), you can request information about your data as well as its correction or deletion. Since the statistics do not identify individuals, I usually cannot link any data there to you. Feel free to contact me directly with any questions.</p>
 </section>
 

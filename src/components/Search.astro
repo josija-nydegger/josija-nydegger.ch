@@ -1,0 +1,130 @@
+---
+// Befehlspalette (Strg/⌘ K oder Suchknopf in der Kopfzeile): durchsucht Seiten, Tools und Beiträge der eigenen Sprache.
+// Der Index wird beim Build als JSON in die Seite geschrieben; gesucht wird nur im Browser.
+import { i18n, type Lang } from '../data/i18n';
+import { tools } from '../data/tools';
+import { getPosts } from '../lib/posts';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = i18n[lang];
+const de = lang === 'de';
+const base = de ? '' : '/en';
+
+type Entry = { t: string; d: string; u: string; k: string; s?: string };
+const pages: Entry[] = [
+  { t: de ? 'Start' : 'Home', d: de ? 'Über mich, Arbeiten, Projekte, Kontakt' : 'About me, academic work, projects, contact', u: t.homeUrl, k: t.kindPage },
+  { t: de ? 'Lebenslauf' : 'CV', d: de ? 'Ausbildung, Erfahrung, Kenntnisse' : 'Education, experience, skills', u: `${base}/cv`, k: t.kindPage, s: 'cv lebenslauf resume' },
+  { t: 'Tools', d: de ? 'Web-Tools zu Statik, Bemessung und Einheiten' : 'Web tools for structural analysis, design and units', u: `${base}/tools/`, k: t.kindPage },
+  { t: 'Blog', d: de ? 'Alle Beiträge' : 'All posts', u: t.blogUrl, k: t.kindPage },
+  { t: de ? 'Arbeiten' : 'Academic work', d: de ? 'Bachelorarbeit ETH, Projektarbeit BFH' : "Bachelor's thesis ETH, semester project BFH", u: `${t.homeUrl}#arbeiten`, k: t.kindPage, s: 'pdf thesis bachelorarbeit' },
+  { t: de ? 'Projekte' : 'Projects', d: 'QR-tool, weather-bot', u: `${t.homeUrl}#projekte`, k: t.kindPage, s: 'github code' },
+  { t: de ? 'Kontakt' : 'Contact', d: 'LinkedIn, GitHub, E-Mail', u: `${t.homeUrl}#kontakt`, k: t.kindPage, s: 'email mail linkedin' },
+  { t: t.privacy, d: de ? 'Welche Daten anfallen' : 'What data is collected', u: t.privacyUrl, k: t.kindPage, s: 'privacy datenschutz umami' }
+];
+const toolEntries: Entry[] = tools.map(x => ({ t: x.title[lang], d: x.description[lang], u: x.url, k: t.kindTool, s: x.tags[lang].join(' ') }));
+const postEntries: Entry[] = (await getPosts(lang)).map(p => ({ t: p.title, d: p.description, u: p.url, k: t.kindPost, s: p.tags.join(' ') }));
+const index = [...pages, ...toolEntries, ...postEntries];
+---
+<dialog class="palette" aria-label={t.search} data-empty={t.searchEmpty}>
+  <div class="palette-input">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="search" placeholder={t.searchPlaceholder} aria-label={t.search} autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="palette-list">
+  </div>
+  <ul class="palette-list" id="palette-list" role="listbox"></ul>
+  <div class="palette-foot" aria-hidden="true">
+    <span><kbd>↵</kbd> {t.searchHelpOpen}</span>
+    <span><kbd>↑</kbd><kbd>↓</kbd> {t.searchHelpMove}</span>
+    <span><kbd>Esc</kbd> {t.searchHelpClose}</span>
+  </div>
+</dialog>
+<script type="application/json" id="search-index" set:html={JSON.stringify(index)} />
+
+<script>
+  type Entry = { t: string; d: string; u: string; k: string; s?: string };
+  const dialog = document.querySelector<HTMLDialogElement>('.palette')!;
+  const input = dialog.querySelector('input')!;
+  const list = dialog.querySelector<HTMLUListElement>('.palette-list')!;
+  const index: Entry[] = JSON.parse(document.getElementById('search-index')!.textContent || '[]');
+  let results: Entry[] = [];
+  let sel = 0;
+
+  // Umlaute und Gross/klein egal: "uber" findet "Über"
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const haystack = index.map(e => ({ e, title: norm(e.t), all: norm(`${e.t} ${e.d} ${e.s ?? ''} ${e.k}`) }));
+
+  function search(q: string) {
+    const words = norm(q).split(/\s+/).filter(Boolean);
+    if (!words.length) return index.slice(0, 9);
+    return haystack
+      .filter(h => words.every(w => h.all.includes(w)))
+      .map(h => ({ e: h.e, score: words.reduce((s, w) => s + (h.title.startsWith(w) ? 3 : h.title.includes(w) ? 2 : 0), 0) }))
+      .sort((a, b) => b.score - a.score)
+      .map(r => r.e);
+  }
+
+  function render() {
+    results = search(input.value);
+    sel = Math.min(sel, Math.max(0, results.length - 1));
+    list.replaceChildren();
+    if (!results.length) {
+      const p = document.createElement('li');
+      p.className = 'palette-empty';
+      p.textContent = dialog.dataset.empty ?? '';
+      list.append(p);
+      return;
+    }
+    results.forEach((r, i) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.id = `palette-${i}`;
+      li.setAttribute('aria-selected', String(i === sel));
+      const a = document.createElement('a');
+      a.href = r.u;
+      for (const [cls, text] of [['t', r.t], ['k', r.k], ['d', r.d]]) {
+        const span = document.createElement('span');
+        span.className = cls;
+        span.textContent = text;
+        a.append(span);
+      }
+      a.addEventListener('mousemove', () => { if (sel !== i) { sel = i; mark(); } });
+      li.append(a);
+      list.append(li);
+    });
+    input.setAttribute('aria-activedescendant', `palette-${sel}`);
+  }
+  function mark() {
+    list.querySelectorAll('li[role=option]').forEach((li, i) => li.setAttribute('aria-selected', String(i === sel)));
+    list.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' });
+    input.setAttribute('aria-activedescendant', `palette-${sel}`);
+  }
+
+  function open() {
+    if (dialog.open) return;
+    input.value = '';
+    sel = 0;
+    render();
+    dialog.showModal();
+    input.focus();
+  }
+  input.addEventListener('input', () => { sel = 0; render(); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); sel = (sel + 1) % Math.max(1, results.length); mark(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); sel = (sel - 1 + results.length) % Math.max(1, results.length); mark(); }
+    else if (e.key === 'Enter' && results[sel]) { e.preventDefault(); location.href = results[sel].u; dialog.close(); }
+  });
+  // Klick auf den Hintergrund schliesst
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+  list.addEventListener('click', e => { if ((e.target as Element).closest('a')) dialog.close(); });
+
+  document.addEventListener('keydown', e => {
+    const typing = (e.target as Element).closest?.('input, textarea, [contenteditable]');
+    if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) { e.preventDefault(); open(); }
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-search]').forEach(b => {
+    b.hidden = false;
+    b.addEventListener('click', open);
+  });
+  // Mac-Nutzer sehen ⌘ statt Strg
+  if (/Mac|iPhone|iPad/.test(navigator.platform)) document.querySelectorAll('.search-button kbd').forEach(k => (k.textContent = '⌘K'));
+</script>

@@ -30,7 +30,29 @@ export const i18n = {
     themeSystem: 'System',
     // Fusszeile
     privacy: 'Datenschutz',
-    privacyUrl: '/datenschutz'
+    privacyUrl: '/datenschutz',
+    // Kopfzeile, Suche, Plankopf (Design-Experiment)
+    menu: 'Menü',
+    search: 'Suchen',
+    searchPlaceholder: 'Seiten, Tools und Beiträge durchsuchen',
+    searchEmpty: 'Nichts gefunden. Versuch einen anderen Begriff, zum Beispiel «Balken» oder «SIA».',
+    searchHelpOpen: 'öffnen',
+    searchHelpMove: 'auswählen',
+    searchHelpClose: 'schliessen',
+    kindPage: 'Seite',
+    kindTool: 'Tool',
+    kindPost: 'Beitrag',
+    tbSheet: 'Plan',
+    tbScale: 'Massstab',
+    tbDrawn: 'Gezeichnet',
+    tbDate: 'Stand',
+    tbRev: 'Revision',
+    tbLang: 'Sprache',
+    tbSub: 'Bauingenieurwesen, BIM und eigene Tools',
+    toc: 'Inhalt',
+    copy: 'Kopieren',
+    copied: 'Kopiert',
+    all: 'Alle'
   },
   en: {
     name: 'English',
@@ -57,7 +79,29 @@ export const i18n = {
     themeSystem: 'System',
     // Footer
     privacy: 'Privacy',
-    privacyUrl: '/en/privacy'
+    privacyUrl: '/en/privacy',
+    // Header, search, title block (design experiment)
+    menu: 'Menu',
+    search: 'Search',
+    searchPlaceholder: 'Search pages, tools and posts',
+    searchEmpty: 'No results. Try another term, such as “beam” or “SIA”.',
+    searchHelpOpen: 'open',
+    searchHelpMove: 'select',
+    searchHelpClose: 'close',
+    kindPage: 'Page',
+    kindTool: 'Tool',
+    kindPost: 'Post',
+    tbSheet: 'Sheet',
+    tbScale: 'Scale',
+    tbDrawn: 'Drawn by',
+    tbDate: 'Updated',
+    tbRev: 'Revision',
+    tbLang: 'Language',
+    tbSub: 'Civil engineering, BIM and my own tools',
+    toc: 'Contents',
+    copy: 'Copy',
+    copied: 'Copied',
+    all: 'All'
   }
 } as const satisfies Record<Lang, Record<string, string>>;
 

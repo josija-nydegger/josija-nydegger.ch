@@ -1,0 +1,28 @@
+---
+// Filter-Chips über einer Liste (Tools, Blog): blendet .item ohne passenden Tag aus.
+// Einträge tragen ihre Tags in data-tags (durch "|" getrennt). Ohne JavaScript bleibt der Filter ausgeblendet.
+import { i18n, type Lang } from '../data/i18n';
+
+interface Props { lang: Lang; tags: string[] }
+const { lang, tags } = Astro.props;
+const unique = [...new Set(tags)].sort((a, b) => a.localeCompare(b, lang));
+---
+{unique.length > 1 && (
+  <div class="filters" role="group" aria-label={lang === 'de' ? 'Nach Thema filtern' : 'Filter by topic'} data-filter hidden>
+    <button type="button" class="chip" aria-pressed="true" data-tag="">{i18n[lang].all}</button>
+    {unique.map(tag => <button type="button" class="chip" aria-pressed="false" data-tag={tag}>{tag}</button>)}
+  </div>
+)}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-filter]').forEach(group => {
+    const chips = group.querySelectorAll<HTMLButtonElement>('.chip');
+    const items = document.querySelectorAll<HTMLElement>('.item[data-tags]');
+    chips.forEach(chip => chip.addEventListener('click', () => {
+      const tag = chip.dataset.tag ?? '';
+      chips.forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
+      items.forEach(item => { item.hidden = !!tag && !item.dataset.tags!.split('|').includes(tag); });
+    }));
+    group.hidden = false;
+  });
+</script>

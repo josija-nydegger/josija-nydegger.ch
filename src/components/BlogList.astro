@@ -6,13 +6,16 @@ import { getPosts } from '../lib/posts';
 
 interface Props {
   lang: Lang;
+  /** Achsbuchstabe in der Randspalte der Startseite */
+  axis?: string;
 }
-const { lang } = Astro.props;
+const { lang, axis } = Astro.props;
 const t = i18n[lang];
 const posts = (await getPosts(lang)).slice(0, 3);
 ---
-<section id="blog">
-  <h2>{t.blog} <a class="rss" href={t.feedUrl} title={t.rssTitle}>RSS</a></h2>
+<section class="sheet" id="blog">
+  <h2 class="rail">{axis && <span class="axis">{axis}</span>}{t.blog} <a class="rss" href={t.feedUrl} title={t.rssTitle}>RSS</a></h2>
+  <div>
   {posts.length > 0 ? (
     <>
       <div class="list">
@@ -25,9 +28,10 @@ const posts = (await getPosts(lang)).slice(0, 3);
           </a>
         ))}
       </div>
-      <p class="page-note"><a href={t.blogUrl}>{t.allPosts} →</a></p>
+      <p class="page-note"><a href={t.blogUrl}>{t.allPosts}</a></p>
     </>
   ) : (
     <p class="item-sub">{t.noPosts}</p>
   )}
+  </div>
 </section>

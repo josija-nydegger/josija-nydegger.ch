@@ -143,7 +143,13 @@ try {
   ok('Einheiten: Service Worker mit Scope des Tools registriert', ehJs.includes('/' + EH + 'sw.js') && new RegExp('scope:\\s*["\'`]/' + EH + '["\'`]').test(ehJs));
   const others = builtA.filter(p => p.endsWith('.html') && p !== EH + 'index.html');
   ok('Übrige Seiten ohne Manifest', !others.some(p => /rel="manifest"/.test(a.read(p))), others.filter(p => /rel="manifest"/.test(a.read(p))).join(' '));
-  ok('Übrige Seiten ohne Service Worker', !others.some(p => /serviceWorker|\/_astro\//.test(a.read(p))), others.filter(p => /serviceWorker|\/_astro\//.test(a.read(p))).join(' '));
+  // Übrige Seiten dürfen gebündelte Skripte/CSS aus /_astro/ laden (Design-Experiment), aber keinen Service Worker registrieren
+  const withSw = p => {
+    const html = a.read(p);
+    const bundled = [...html.matchAll(/src="\/(_astro\/[^"]+\.js)"/g)].map(m => a.read(m[1])).join('');
+    return /serviceWorker/.test(html + bundled);
+  };
+  ok('Übrige Seiten ohne Service Worker', !others.some(withSw), others.filter(withSw).join(' '));
   ok('Einheiten: Tool funktioniert ohne fremde Server (keine externen Skripte ausser der Statistik)', !/<script[^>]+src="https?:/.test(ehHtml.replace(UMAMI, '')));
 
   // 8. Eigenes iOS-Home-Bildschirm-Symbol pro Tool: 180×180, PNG ohne Alphakanal, mit Namen

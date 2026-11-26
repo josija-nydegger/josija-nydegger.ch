@@ -8,10 +8,11 @@
     "build": "astro build",
     "check": "astro check",
     "preview": "astro preview",
-    "test": "node _tests/balken-momente.test.js && node _tests/balken-querkraft-durchbiegung.test.js && node _tests/querschnittswerte.test.js && node _tests/biegebemessung.test.js && node _tests/lastkombinationen.test.mjs && node _tests/einheiten.test.mjs && node _tests/website.test.js"
+    "test": "node _tests/balken-momente.test.js && node _tests/balken-querkraft-durchbiegung.test.js && node _tests/querschnittswerte.test.js && node _tests/biegebemessung.test.js && node _tests/lastkombinationen.test.mjs && node _tests/einheiten.test.mjs && node _tests/hero-balken.test.mjs && node _tests/website.test.js"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "7.3.4",
+    "@fontsource-variable/archivo": "5.3.0",
     "astro": "7.4.2",
     "katex": "0.16.47",
     "rehype-katex": "7.0.1",

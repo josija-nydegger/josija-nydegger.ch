@@ -8,20 +8,20 @@ import Base from '../../layouts/Base.astro';
   title="CV"
   description="CV of Josija Nydegger – education, experience and skills in civil engineering."
 >
-  <div class="header">
+  <div class="page-head cv-head">
     <img class="avatar" src="/images/profil.jpg" alt="Josija Nydegger" onerror="this.style.display='none'">
     <div>
-      <h1>CV</h1>
+      <h1 class="page-title">CV</h1>
       <div class="meta">Josija Nydegger · <a href="https://www.linkedin.com/in/josija-nydegger" target="_blank" rel="noopener">LinkedIn</a><span class="email-wrap" hidden> · <a class="email"></a></span></div>
     </div>
     <!-- Öffnet den Druckdialog, dort "Als PDF speichern" wählen. Ohne JavaScript ausgeblendet. -->
     <button type="button" class="button print-button" data-umami-event="Lebenslauf als PDF" data-umami-event-sprache="en" data-print="CV Josija Nydegger" hidden>Save as PDF</button>
   </div>
 
-  <section style="margin-top:0">
-    <h2>Education</h2>
-    <ul class="list">
-      <li class="item">
+  <section class="sheet">
+    <h2 class="rail">Education</h2>
+    <ul class="list timeline">
+      <li class="item now">
         <div class="item-head">
           <p class="item-title">BSc in Civil Engineering (part-time)</p>
           <span class="item-year">2024 – present</span>
@@ -59,10 +59,10 @@ import Base from '../../layouts/Base.astro';
     </ul>
   </section>
 
-  <section>
-    <h2>Experience</h2>
-    <ul class="list">
-      <li class="item">
+  <section class="sheet">
+    <h2 class="rail">Experience</h2>
+    <ul class="list timeline">
+      <li class="item now">
         <div class="item-head">
           <p class="item-title">Working student, structural engineering · <a href="https://www.baukonstrukt.ch/">Baukonstrukt AG</a></p>
           <span class="item-year">2026 – present</span>
@@ -114,9 +114,9 @@ import Base from '../../layouts/Base.astro';
     </ul>
   </section>
 
-  <section>
-    <h2>Other activities</h2>
-    <ul class="list">
+  <section class="sheet">
+    <h2 class="rail">Other activities</h2>
+    <ul class="list timeline">
       <li class="item">
         <div class="item-head">
           <p class="item-title">DTS with YWAM, San Diego</p>
@@ -140,8 +140,8 @@ import Base from '../../layouts/Base.astro';
     </ul>
   </section>
 
-  <section>
-    <h2>Skills</h2>
+  <section class="sheet">
+    <h2 class="rail">Skills</h2>
     <div class="tags">
       <span class="tag">BIM / IFC</span>
       <span class="tag">IfcOpenShell</span>
@@ -164,13 +164,13 @@ import Base from '../../layouts/Base.astro';
     </div>
   </section>
 
-  <section>
-    <h2>Personal</h2>
+  <section class="sheet">
+    <h2 class="rail">Personal</h2>
     <p>Happily married to Prisca since 2024, living in Lyss.</p>
   </section>
 
-  <section>
-    <h2>Interests</h2>
+  <section class="sheet">
+    <h2 class="rail">Interests</h2>
     <p>Endurance sports (10K to marathon, Engadin Ski Marathon, <a href="https://www.strava.com/athletes/8047977">Strava</a>), talking with people, quality journalism and books, aviation.</p>
   </section>
 </Base>

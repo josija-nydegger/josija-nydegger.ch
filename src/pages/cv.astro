@@ -8,20 +8,20 @@ import Base from '../layouts/Base.astro';
   title="Lebenslauf"
   description="Lebenslauf von Josija Nydegger – Ausbildung, Erfahrung und Kenntnisse im Bauingenieurwesen."
 >
-  <div class="header">
+  <div class="page-head cv-head">
     <img class="avatar" src="/images/profil.jpg" alt="Josija Nydegger" onerror="this.style.display='none'">
     <div>
-      <h1>Lebenslauf</h1>
+      <h1 class="page-title">Lebenslauf</h1>
       <div class="meta">Josija Nydegger · <a href="https://www.linkedin.com/in/josija-nydegger" target="_blank" rel="noopener">LinkedIn</a><span class="email-wrap" hidden> · <a class="email"></a></span></div>
     </div>
     <!-- Öffnet den Druckdialog, dort "Als PDF speichern" wählen. Ohne JavaScript ausgeblendet. -->
     <button type="button" class="button print-button" data-umami-event="Lebenslauf als PDF" data-umami-event-sprache="de" data-print="Lebenslauf Josija Nydegger" hidden>Als PDF speichern</button>
   </div>
 
-  <section style="margin-top:0">
-    <h2>Ausbildung</h2>
-    <ul class="list">
-      <li class="item">
+  <section class="sheet">
+    <h2 class="rail">Ausbildung</h2>
+    <ul class="list timeline">
+      <li class="item now">
         <div class="item-head">
           <p class="item-title">Bachelor Bauingenieurwesen (Teilzeit)</p>
           <span class="item-year">2024 – heute</span>
@@ -59,10 +59,10 @@ import Base from '../layouts/Base.astro';
     </ul>
   </section>
 
-  <section>
-    <h2>Erfahrung</h2>
-    <ul class="list">
-      <li class="item">
+  <section class="sheet">
+    <h2 class="rail">Erfahrung</h2>
+    <ul class="list timeline">
+      <li class="item now">
         <div class="item-head">
           <p class="item-title">Werkstudent Hochbau · <a href="https://www.baukonstrukt.ch/">Baukonstrukt AG</a></p>
           <span class="item-year">2026 – heute</span>
@@ -114,9 +114,9 @@ import Base from '../layouts/Base.astro';
     </ul>
   </section>
 
-  <section>
-    <h2>Weitere Tätigkeiten</h2>
-    <ul class="list">
+  <section class="sheet">
+    <h2 class="rail">Weitere Tätigkeiten</h2>
+    <ul class="list timeline">
       <li class="item">
         <div class="item-head">
           <p class="item-title">DTS bei YWAM, San Diego</p>
@@ -140,8 +140,8 @@ import Base from '../layouts/Base.astro';
     </ul>
   </section>
 
-  <section>
-    <h2>Kenntnisse</h2>
+  <section class="sheet">
+    <h2 class="rail">Kenntnisse</h2>
     <div class="tags">
       <span class="tag">BIM / IFC</span>
       <span class="tag">IfcOpenShell</span>
@@ -164,13 +164,13 @@ import Base from '../layouts/Base.astro';
     </div>
   </section>
 
-  <section>
-    <h2>Persönliches</h2>
+  <section class="sheet">
+    <h2 class="rail">Persönliches</h2>
     <p>Seit 2024 glücklich verheiratet mit Prisca, wohnhaft in Lyss.</p>
   </section>
 
-  <section>
-    <h2>Interessen</h2>
+  <section class="sheet">
+    <h2 class="rail">Interessen</h2>
     <p>Ausdauersport (10 km bis Marathon, Engadin Skimarathon, <a href="https://www.strava.com/athletes/8047977">Strava</a>), Gespräche mit Menschen, Qualitätsjournalismus und Bücher, Fliegerei.</p>
   </section>
 </Base>

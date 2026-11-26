@@ -2,6 +2,7 @@
 // Startseite (Deutsch), /. Änderungen auch in src/pages/en/index.astro nachführen.
 import Base from '../layouts/Base.astro';
 import BlogList from '../components/BlogList.astro';
+import HeroBeam from '../components/HeroBeam.astro';
 import { postUrl } from '../lib/posts';
 
 // Blog-Tag bei Projekten erst, wenn der Beitrag veröffentlicht ist (Datum erreicht)
@@ -12,19 +13,26 @@ const qrPost = await postUrl('qr-tool', 'de');
   ref="home"
 >
 
-  <!-- ===== Kopf ===== -->
-  <div class="header">
-    <img class="avatar" src="/images/profil.jpg" alt="Josija Nydegger" onerror="this.style.display='none'">
-    <div>
-      <h1>Josija Nydegger</h1>
-      <div class="meta">Bauingenieurwesen · Berner Fachhochschule</div>
+  <!-- ===== Kopf mit interaktivem Balken ===== -->
+  <div class="hero">
+    <h1 class="hero-name">Josija<br>Nydegger</h1>
+    <div class="hero-row">
+      <div>
+        <p class="hero-lead">Ich bin Bauingenieur-Student, wohne mit meiner Frau Prisca in Lyss und interessiere mich dafür, Ingenieurarbeit mit eigener Software zu vereinfachen.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="/cv">Lebenslauf</a>
+          <a class="button" href="/tools/">Tools ansehen</a>
+          <a class="button" href="#kontakt">Kontakt</a>
+        </div>
+      </div>
+      <img class="avatar" src="/images/profil.jpg" alt="Josija Nydegger" width="92" height="92" onerror="this.style.display='none'">
     </div>
+    <HeroBeam lang="de" />
   </div>
 
-  <!-- ===== Bio ===== -->
-  <section style="margin-top:0">
-    <p>Ich bin Bauingenieur-Student, wohne mit meiner Frau Prisca in Lyss und interessiere mich dafür, Ingenieurarbeit mit eigener Software zu vereinfachen.</p>
-
+  <section class="sheet" id="ueber">
+    <h2 class="rail"><span class="axis">A</span>Über mich</h2>
+    <div class="prose">
     <h3>Aktuell</h3>
     <p>
       Ich studiere Bauingenieurwesen in Teilzeit an der <a href="https://www.bfh.ch">Berner Fachhochschule</a> in Burgdorf
@@ -52,13 +60,12 @@ const qrPost = await postUrl('qr-tool', 'de');
       Ich programmiere kleine Tools (<a href="https://github.com/josija-nydegger">GitHub</a>)
       und laufe Distanzen von 10&nbsp;km bis zum Marathon (<a href="https://www.strava.com/athletes/8047977">Strava</a>).
     </p>
-
-    <a class="button primary" href="/cv">Zum Lebenslauf →</a>
+    </div>
   </section>
 
   <!-- ===== Arbeiten ===== -->
-  <section>
-    <h2>Arbeiten</h2>
+  <section class="sheet" id="arbeiten">
+    <h2 class="rail"><span class="axis">B</span>Arbeiten</h2>
     <ul class="list">
       <!-- PDF hinzufügen: Datei in den Ordner "arbeiten" hochladen und unter dem Eintrag einfügen:
            <div class="tags"><a class="tag" href="/arbeiten/DATEINAME.pdf" target="_blank" rel="noopener">PDF</a></div> -->
@@ -81,8 +88,8 @@ const qrPost = await postUrl('qr-tool', 'de');
   </section>
 
   <!-- ===== Projekte ===== -->
-  <section>
-    <h2>Projekte</h2>
+  <section class="sheet" id="projekte">
+    <h2 class="rail"><span class="axis">C</span>Projekte</h2>
     <ul class="list">
       <li class="item">
         <div class="item-head">
@@ -111,12 +118,12 @@ const qrPost = await postUrl('qr-tool', 'de');
   </section>
 
   <!-- ===== Blog (wird automatisch aus src/content/blog erzeugt, nur Beiträge dieser Sprache) ===== -->
-  <BlogList lang="de" />
+  <BlogList lang="de" axis="D" />
 
   <!-- ===== Kontakt ===== -->
-  <section>
-    <h2>Kontakt</h2>
-    <p>Am einfachsten erreichst du mich über <a href="https://www.linkedin.com/in/josija-nydegger">LinkedIn</a><span class="email-wrap" hidden> oder per E-Mail an <a class="email"></a></span>.</p>
+  <section class="sheet" id="kontakt">
+    <h2 class="rail"><span class="axis">E</span>Kontakt</h2>
+    <p class="contact-lead">Am einfachsten erreichst du mich über <a href="https://www.linkedin.com/in/josija-nydegger">LinkedIn</a><span class="email-wrap" hidden> oder per E-Mail an <a class="email"></a></span>.</p>
     <div class="socials">
       <a href="https://www.linkedin.com/in/josija-nydegger" target="_blank" rel="noopener">LinkedIn</a>
       <a href="https://github.com/josija-nydegger" target="_blank" rel="noopener">GitHub</a>

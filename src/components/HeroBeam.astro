@@ -1,0 +1,171 @@
+---
+// Interaktiver Balken im Kopf der Startseite: Einzellast F entlang eines einfachen Balkens ziehen,
+// Momentenlinie, Mmax und Auflagerkräfte rechnen live mit. Ohne JavaScript: Ausgangslage als Zeichnung.
+// Rechenkern: src/lib/hero-balken.ts (getestet in _tests/hero-balken.test.mjs).
+import { zeichnung, fmt, BALKEN, X0, X1, BEAM_Y, M_BASE, VIEW } from '../lib/hero-zeichnung';
+import type { Lang } from '../data/i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const de = lang === 'de';
+const z = zeichnung(2);
+const qArrows = Array.from({ length: 21 }, (_, i) => X0 + (i * (X1 - X0)) / 20);
+const label = de ? 'Lage der Einzellast F' : 'Position of point load F';
+const caption = de
+  ? 'Zieh die Last F. Gerechnet wie im Balken-Tool.'
+  : 'Drag the load F. Calculated like in the beam tool.';
+const toolUrl = '/tools/balken/';
+---
+<figure class="beam" data-beam data-lang={lang}>
+  <svg viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} role="group" aria-label={de ? 'Einfacher Balken mit Gleichlast und verschiebbarer Einzellast' : 'Simply supported beam with a line load and a movable point load'}>
+    <defs>
+      <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse">
+        <line class="hatch-line" x1="4.5" y1="0" x2="4.5" y2="9" />
+      </pattern>
+    </defs>
+
+    <!-- Gleichlast q -->
+    <line class="thin" x1={X0} y1="96" x2={X1} y2="96" />
+    {qArrows.map(x => <>
+      <line class="q-arrow" x1={x} y1="97" x2={x} y2={BEAM_Y - 10} />
+      <path class="q-head" d={`M${x - 5},${BEAM_Y - 12} h10 l-5,9 Z`} />
+    </>)}
+    <text class="t-muted" x={X1} y="84" text-anchor="end">q = {BALKEN.q} kN/m</text>
+
+    <!-- Balken und Auflager (A fest, B verschieblich) -->
+    <line class="ink" x1={X0} y1={BEAM_Y} x2={X1} y2={BEAM_Y} style="stroke-width:5" />
+    <path class="ink" d={`M${X0},${BEAM_Y + 3} l-15,26 h30 Z`} />
+    <path class="thin" d={`M${X0 - 24},${BEAM_Y + 33} h48`} />
+    <path class="ink" d={`M${X1},${BEAM_Y + 3} l-15,26 h30 Z`} />
+    <path class="thin" d={`M${X1 - 24},${BEAM_Y + 35} h48 M${X1 - 24},${BEAM_Y + 40} h48`} />
+    <text class="t-muted" x={X0 - 32} y={BEAM_Y + 6} text-anchor="end">A</text>
+    <text class="t-muted" x={X1 + 32} y={BEAM_Y + 6}>B</text>
+
+    <!-- Momentenlinie (Zugseite unten) -->
+    <line class="thin" x1={X0} y1={M_BASE} x2={X1} y2={M_BASE} />
+    <path class="m-area" data-area d={z.area} />
+    <path class="m-line" data-curve d={z.curve} />
+    <line class="dim" data-peak-line x1={z.peakX} y1={M_BASE} x2={z.peakX} y2={z.peakY} stroke-dasharray="3 4" />
+    <text class="t-accent" data-peak-text x={z.peakX} y={M_BASE - 10} text-anchor="middle">M = {fmt(z.Mmax)} kNm</text>
+
+    <!-- Bemassung a | L − a -->
+    <g class="dimension">
+      <line class="dim" x1={X0} y1="345" x2={X1} y2="345" />
+      <line class="dim" x1={X0} y1="337" x2={X0} y2="353" />
+      <line class="dim" x1={X1} y1="337" x2={X1} y2="353" />
+      <line class="dim" data-dim-tick x1={z.loadX} y1="337" x2={z.loadX} y2="353" />
+      <text class="t-muted" data-dim-a x={(X0 + z.loadX) / 2} y="337" text-anchor="middle">{fmt(z.a, 2)} m</text>
+      <text class="t-muted" data-dim-b x={(z.loadX + X1) / 2} y="337" text-anchor="middle">{fmt(BALKEN.L - z.a, 2)} m</text>
+    </g>
+
+    <!-- Einzellast F (zum Ziehen; mit Pfeiltasten bedienbar) -->
+    <g class="load" data-load transform={`translate(${z.loadX} 0)`} tabindex="0" role="slider"
+       aria-label={label} aria-valuemin="0" aria-valuemax={BALKEN.L} aria-valuenow={z.a} aria-valuetext={`${fmt(z.a, 2)} m`}>
+      <rect class="load-hit" x="-30" y="0" width="60" height={BEAM_Y} />
+      <line x1="0" y1="34" x2="0" y2={BEAM_Y - 16} />
+      <path d={`M-9,${BEAM_Y - 20} L9,${BEAM_Y - 20} L0,${BEAM_Y - 3} Z`} />
+      <circle class="handle" cx="0" cy="24" r="12" />
+      <text class="t-accent" data-f-text x={z.loadX > 720 ? -22 : 22} y="30" text-anchor={z.loadX > 720 ? 'end' : 'start'}>F = {BALKEN.F} kN</text>
+    </g>
+  </svg>
+  <figcaption>
+    <span class="beam-values" aria-live="polite">
+      <span>A = <b data-out="A">{fmt(z.A)}</b> kN</span>
+      <span>B = <b data-out="B">{fmt(z.B)}</b> kN</span>
+      <span class="accent">M<sub>max</sub> = <b data-out="M">{fmt(z.Mmax)}</b> kNm</span>
+      <span>{de ? 'bei' : 'at'} x = <b data-out="x">{fmt(z.xMmax, 2)}</b> m</span>
+    </span>
+    <span>{caption} <a href={toolUrl}>{de ? 'Zum Balken-Tool' : 'Open the beam tool'}</a></span>
+  </figcaption>
+</figure>
+
+<script>
+  import { zeichnung, fmt, toM, BALKEN, X0, X1, VIEW } from '../lib/hero-zeichnung';
+
+  const fig = document.querySelector<HTMLElement>('[data-beam]');
+  if (fig) {
+    const svg = fig.querySelector('svg')!;
+    const load = fig.querySelector<SVGGElement>('[data-load]')!;
+    const q = <T extends Element>(s: string) => fig.querySelector<T>(s)!;
+    const area = q('[data-area]'), curve = q('[data-curve]');
+    const peakLine = q('[data-peak-line]'), peakText = q('[data-peak-text]');
+    const fText = q('[data-f-text]');
+    const tick = q('[data-dim-tick]'), dimA = q('[data-dim-a]'), dimB = q('[data-dim-b]');
+    const out = (k: string) => q(`[data-out="${k}"]`);
+    let a = 2;
+    let frame = 0;
+
+    // Schrift in der Zeichnung bleibt auf dem Handy lesbar: Grösse an die Breite koppeln
+    const scale = () => fig.style.setProperty('--u', String(Math.max(1, Math.min(2.8, VIEW.w / svg.clientWidth * 0.8))));
+    new ResizeObserver(scale).observe(svg);
+
+    function draw() {
+      frame = 0;
+      const z = zeichnung(a);
+      load.setAttribute('transform', `translate(${z.loadX} 0)`);
+      load.setAttribute('aria-valuenow', z.a.toFixed(2));
+      load.setAttribute('aria-valuetext', `${fmt(z.a, 2)} m`);
+      fText.setAttribute('x', z.loadX > 720 ? '-22' : '22');
+      fText.setAttribute('text-anchor', z.loadX > 720 ? 'end' : 'start');
+      area.setAttribute('d', z.area);
+      curve.setAttribute('d', z.curve);
+      peakLine.setAttribute('x1', String(z.peakX));
+      peakLine.setAttribute('x2', String(z.peakX));
+      peakLine.setAttribute('y2', String(z.peakY));
+      const px = Math.min(X1 - 90, Math.max(X0 + 90, z.peakX));
+      peakText.setAttribute('x', String(px));
+      peakText.textContent = `M = ${fmt(z.Mmax)} kNm`;
+      tick.setAttribute('x1', String(z.loadX));
+      tick.setAttribute('x2', String(z.loadX));
+      dimA.setAttribute('x', String((X0 + z.loadX) / 2));
+      dimA.textContent = `${fmt(z.a, 2)} m`;
+      dimA.setAttribute('opacity', z.a < 0.7 ? '0' : '1');
+      dimB.setAttribute('x', String((z.loadX + X1) / 2));
+      dimB.textContent = `${fmt(BALKEN.L - z.a, 2)} m`;
+      dimB.setAttribute('opacity', BALKEN.L - z.a < 0.7 ? '0' : '1');
+      out('A').textContent = fmt(z.A);
+      out('B').textContent = fmt(z.B);
+      out('M').textContent = fmt(z.Mmax);
+      out('x').textContent = fmt(z.xMmax, 2);
+    }
+    const set = (v: number) => {
+      a = Math.round(Math.min(BALKEN.L, Math.max(0, v)) * 20) / 20; // auf 5 cm runden
+      if (!frame) frame = requestAnimationFrame(draw);
+    };
+
+    // Zeigerposition → Lage in m
+    const toBeam = (e: PointerEvent) => {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM()!.inverse());
+      return toM(p.x);
+    };
+    let dragging = false;
+    svg.addEventListener('pointerdown', e => {
+      dragging = true;
+      fig.classList.add('dragging');
+      svg.setPointerCapture(e.pointerId);
+      set(toBeam(e));
+    });
+    svg.addEventListener('pointermove', e => { if (dragging) set(toBeam(e)); });
+    const stop = () => {
+      if (!dragging) return;
+      dragging = false;
+      fig.classList.remove('dragging');
+    };
+    svg.addEventListener('pointerup', stop);
+    svg.addEventListener('pointercancel', stop);
+
+    load.addEventListener('keydown', e => {
+      const step = e.shiftKey ? 0.5 : 0.1;
+      const keys: Record<string, number> = { ArrowLeft: a - step, ArrowDown: a - step, ArrowRight: a + step, ArrowUp: a + step, Home: 0, End: BALKEN.L, PageDown: a - 1, PageUp: a + 1 };
+      if (e.key in keys) { e.preventDefault(); set(keys[e.key]); }
+    });
+  }
+</script>
+<style>
+  /* Schriftgrösse in der Zeichnung folgt --u (gesetzt vom Skript), Linien bleiben fein */
+  .beam :global(text) { font-size: calc(var(--u, 1) * 17px); }
+  .beam :global(.t-muted) { font-size: calc(var(--u, 1) * 15px); }
+  .beam :global(line), .beam :global(path), .beam :global(circle) { vector-effect: non-scaling-stroke; }
+</style>

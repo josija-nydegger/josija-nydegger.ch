@@ -1,15 +1,17 @@
 ---
-// Fehlerseite "PAGE NOT FOUND" (Englisch, eine für die ganze Website). GitHub Pages zeigt sie für unbekannte Adressen.
+// Fehlerseite (Englisch und Deutsch, eine für die ganze Website). Cloudflare zeigt sie für unbekannte Adressen.
 import Base from '../layouts/Base.astro';
 ---
 <Base
   lang="en"
   title="Page not found"
 >
-  <article>
-    <h1>PAGE NOT FOUND</h1>
-    <div class="date">404</div>
-    <p>The page you are looking for doesn't exist or has been moved.</p>
-    <a class="button" href="/">Back to Website</a>
+  <article class="not-found">
+    <h1>Page not found</h1>
+    <div class="date">404 · Seite nicht gefunden</div>
+    <p>This page doesn't exist or has moved. Diese Seite gibt es nicht oder sie ist umgezogen.</p>
+    <p>Press <kbd>Ctrl</kbd> <kbd>K</kbd> to search, or go back to the start page.</p>
+    <a class="button primary" href="/">Start page</a>
+    <a class="button" href="/en/">English home</a>
   </article>
 </Base>
