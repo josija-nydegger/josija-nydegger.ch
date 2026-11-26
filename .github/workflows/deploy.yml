@@ -1,5 +1,6 @@
 # Website mit Astro bauen, prüfen und auf Cloudflare Workers veröffentlichen.
-# Pull Requests: nur bauen und prüfen. Push auf main: zusätzlich veröffentlichen.
+# Pull Requests: bauen, prüfen und als Vorschau hochladen (eigene Adresse pro Branch, durch Cloudflare Access geschützt,
+# Link in der Zusammenfassung des Laufs). Push auf main: zusätzlich veröffentlichen.
 # Voraussetzung: Repo-Secrets CLOUDFLARE_API_TOKEN (Vorlage "Edit Cloudflare Workers") und CLOUDFLARE_ACCOUNT_ID.
 # Bis November 2026 GitHub Pages; Konfiguration für Cloudflare: wrangler.jsonc und public/_redirects.
 name: Website bauen und veröffentlichen
@@ -38,5 +39,25 @@ jobs:
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: npx wrangler deploy
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Vorschau: neue Version hochladen, ohne sie zu veröffentlichen. Der Alias gibt jedem Branch eine feste Adresse.
+      # Nicht bei Pull Requests aus Forks (dort fehlen die Secrets). Link nur in der Zusammenfassung, kein Kommentar (keine E-Mail).
+      - name: Vorschau hochladen
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          set -o pipefail
+          alias=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//' | cut -c1-40 | sed -E 's/-+$//')
+          npx wrangler versions upload --preview-alias "$alias" --message "PR #$PR: $BRANCH" | tee upload.log
+          {
+            echo "### Vorschau"
+            echo
+            grep -oE 'https://[^ ]+\.workers\.dev[^ ]*' upload.log | sort -u | sed 's/^/- /'
+            echo
+            echo "Geschützt durch Cloudflare Access (Anmeldung mit Code per E-Mail)."
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          BRANCH: ${{ github.head_ref }}
+          PR: ${{ github.event.pull_request.number }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
