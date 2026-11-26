@@ -10,7 +10,9 @@
     "binding": "ASSETS",
     // Adressen genau wie gebaut: /cv.html bleibt /cv.html (Ordner-Adressen regelt _cloudflare/worker.js)
     "html_handling": "none",
-    "not_found_handling": "404-page"
+    // "none", nicht "404-page": sonst beantwortet Cloudflare Seitenaufrufe von Browsern
+    // (Sec-Fetch-Mode: navigate) ohne passende Datei selbst mit 404.html, ohne den Worker
+    "not_found_handling": "none"
   },
   // Eigene Domain; www leitet eine Redirect-Regel der Zone auf die Domain ohne www um
   "routes": [{ "pattern": "josija-nydegger.ch", "custom_domain": true }],

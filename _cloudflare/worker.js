@@ -25,7 +25,11 @@ export default {
       const res = await asset(url.pathname + '.html');
       if (res) return res;
     }
-    // not_found_handling "404-page": liefert 404.html mit Status 404
-    return env.ASSETS.fetch(request);
+    // Sonst die Antwort der statischen Dateien, bei 404 mit der eigenen Seite 404.html
+    // (not_found_handling ist "none", siehe wrangler.jsonc)
+    const res = await env.ASSETS.fetch(request);
+    if (res.status !== 404) return res;
+    const page = await asset('/404.html');
+    return page ? new Response(page.body, { status: 404, headers: page.headers }) : res;
   }
 };

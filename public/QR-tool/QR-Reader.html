@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Sicherheit: Skripte nur von jsDelivr, keine Datenverbindungen nach aussen (connect-src 'none'),
+         d.h. selbst eingeschleuster Code könnte empfangene Daten nicht per fetch/XHR wegschicken. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net; img-src 'self' data:; media-src 'self' blob: mediastream:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+    <meta name="referrer" content="no-referrer">
+    <title>QR-Code Datenüberträger (Fountain-Empfänger)</title>
+
+    <!-- Alle Bibliotheken mit fester Version + Integritäts-Hash (SRI): wird eine Datei auf dem CDN
+         verändert, verweigert der Browser die Ausführung. Vorher: "@latest" ohne Prüfung. -->
+    <!-- ZBar "inlined"-Build: das WASM ist in der JS-Datei enthalten und damit vom SRI-Hash mit abgedeckt -->
+    <script src="https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.11.0/dist/inlined/index.js" integrity="sha384-EbGJzkj+gTEnDjpWZJGfQ2RXHaIdm5zLuvFqtJI6cdAsjM8VxIIdmx8YG+Qhw1Hn" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js" integrity="sha384-QsSpx6a0USazT7nK7w8qXDgpSAPhFsb2XtpoLFQ5+X2yFN6hvCKnwEzN8M5FWaJb" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js" integrity="sha384-a7SzOxErzJ3ZpQz0zJ32d67dSitNzPcbfybc/ykU9KJhMgZkwqfSxlhhdJRS+XGL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" integrity="sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntILdUW9XmUC6+HX0sLNAK3q71HotJqlAn" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" integrity="sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx" crossorigin="anonymous"></script>
+    <!-- Entschlüsselung (Web Crypto) und Dekompression (DecompressionStream) sind im Browser eingebaut -->
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; color: #1d1d1f; padding: 15px; margin: 0; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
+        .container { max-width: 500px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+        h1 { font-size: 22px; font-weight: 700; margin-top: 10px; margin-bottom: 20px; text-align: center; color: #1d1d1f; }
+        
+        .scanner-wrapper { position: relative; width: 100%; border-radius: 16px; overflow: hidden; background: #000; box-shadow: 0 8px 24px rgba(0,0,0,0.15); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); aspect-ratio: 4 / 3; }
+        .scanner-wrapper.minimized { height: 120px !important; aspect-ratio: auto; opacity: 0.6; margin-bottom: 10px; }
+        
+        #videoElement { width: 100%; height: 100%; object-fit: cover; display: block; }
+        
+        .scan-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; aspect-ratio: 1 / 1; pointer-events: none; z-index: 10; display: block; transition: all 0.3s ease; }
+        .scanner-wrapper.minimized .scan-frame { display: none !important; }
+        .scan-corner { position: absolute; width: 30px; height: 30px; border-color: #0071e3; border-style: solid; box-shadow: 0 0 12px rgba(0, 113, 227, 0.3); }
+        .top-left { top: 0; left: 0; border-width: 4px 0 0 4px; border-radius: 8px 0 0 0; }
+        .top-right { top: 0; right: 0; border-width: 4px 4px 0 0; border-radius: 0 8px 0 0; }
+        .bottom-left { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-radius: 0 0 0 8px; }
+        .bottom-right { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-radius: 0 0 8px 0; }
+        
+        .scan-laser { position: absolute; top: 0; left: 5%; width: 90%; height: 2px; background-color: #0071e3; box-shadow: 0 0 15px 2px rgba(0, 113, 227, 0.8); animation: scan 2.5s infinite linear alternate; }
+        @keyframes scan { 0% { top: 8%; } 100% { top: 92%; } }
+
+        #status { font-weight: 600; font-size: 14px; color: #86868b; text-align: center; margin: 15px 0 12px 0; transition: all 0.3s; }
+        
+        .matrix-container { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(32px, 1fr)); gap: 6px; margin-bottom: 12px; max-height: 150px; overflow-y: auto; transition: all 0.3s ease; }
+        
+        .matrix-box { 
+            aspect-ratio: 1 / 1; 
+            background-color: #e5e5ea; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: #86868b; 
+            transition: transform 0.15s, background-color 0.15s, box-shadow 0.15s; 
+            order: 0; 
+        }
+        
+        .matrix-box.loaded { 
+            background-color: #34c759; 
+            color: white; 
+            box-shadow: 0 0 8px rgba(52, 199, 89, 0.4); 
+            transform: scale(1.05); 
+            order: 1; 
+        }
+
+        #fpsCounter { font-size: 12px; font-weight: 600; color: #86868b; text-align: center; margin-bottom: 20px; font-family: monospace; letter-spacing: 0.5px; transition: opacity 0.3s; }
+
+        .result-card { width: 100%; background: white; border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); box-sizing: border-box; transform: translateY(40px); opacity: 0; display: none; transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .result-card.reveal { display: block; transform: translateY(0); opacity: 1; margin-top: 15px; }
+        .transfer-stats { margin-bottom: 16px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .stat { background: #f5f5f7; border-radius: 12px; padding: 10px 6px; text-align: center; }
+        .stat-value { font-size: 15px; font-weight: 700; color: #1d1d1f; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .stat-label { font-size: 11px; color: #86868b; margin-top: 2px; font-weight: 600; }
+        .stat-line { font-size: 12px; color: #86868b; text-align: center; margin-top: 6px; }
+        .card-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #86868b; margin-bottom: 12px; border-bottom: 1px solid #f2f2f7; padding-bottom: 6px; }
+        
+        #result-content { font-size: 16px; line-height: 1.5; color: #1d1d1f; max-height: 350px; overflow-y: auto; padding-right: 5px; }
+        #result-content h1 { font-size: 22px; margin: 0 0 10px 0; color: #000; }
+        #result-content h2 { font-size: 18px; margin: 15px 0 8px 0; color: #000; }
+        #result-content p { margin: 0 0 12px 0; }
+        #result-content ul, #result-content ol { margin: 0 0 15px 0; padding-left: 22px; }
+        #result-content li { margin-bottom: 5px; }
+        #result-content code { background: #f2f2f7; padding: 3px 6px; border-radius: 6px; font-family: monospace; font-size: 14px; }
+        #result-content a { color: #0071e3; text-decoration: none; }
+        
+        #result-content table { border-collapse: collapse; width: calc(100% - 4px); margin: 15px 2px; border-radius: 8px; overflow: hidden; box-shadow: 0 0 0 1px #d2d2d7; font-size: 14px; }
+        #result-content th { background-color: #f2f2f7; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 1px solid #d2d2d7; }
+        #result-content td { padding: 10px 12px; border-bottom: 1px solid #e5e5ea; }
+        #result-content tr:last-child td { border-bottom: none; }
+        .result-card, #result-content { min-width: 0; max-width: 100%; }
+        #result-content { overflow-wrap: anywhere; position: relative; }
+        #result-content .katex { position: relative; }
+        #result-content .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 15px 0; }
+        #result-content .table-scroll table { margin: 2px; width: auto; min-width: calc(100% - 4px); }
+        #result-content th, #result-content td { white-space: nowrap; }
+        #result-content .katex-display { position: relative; overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: 12px 0; }
+        #result-content blockquote { margin: 12px 0; padding: 8px 14px; border-left: 4px solid #d2d2d7; background: #f5f5f7; border-radius: 0 8px 8px 0; color: #3a3a3c; }
+        #result-content blockquote p:last-child { margin-bottom: 0; }
+        #result-content pre { background: #f2f2f7; padding: 12px; border-radius: 8px; overflow-x: auto; }
+        #result-content pre code { padding: 0; background: none; font-size: 12px; line-height: 1.4; }
+        
+        .button-group { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+        button { flex: 1 1 calc(33.33% - 6px); min-width: 85px; padding: 12px 6px; color: white; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        button:active { transform: scale(0.96); }
+        .button-group button { white-space: nowrap; padding: 12px 4px; }
+        
+        .btn-copy { background-color: #0071e3; box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2); }
+        .btn-share { background-color: #5856d6; box-shadow: 0 4px 12px rgba(88, 86, 214, 0.2); }
+        .btn-pdf { background-color: #ff9500; box-shadow: 0 4px 12px rgba(255, 149, 0, 0.2); }
+        .btn-txt { background-color: #ff9500; box-shadow: 0 4px 12px rgba(255, 149, 0, 0.2); }
+        .btn-csv { background-color: #34c759; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2); }
+        
+        .btn-reset { background-color: #f5f5f7; color: #ff3b30; font-weight: 500; flex: 1 1 100%; margin-top: 4px; }
+        .btn-reset:hover { background-color: #e5e5ea; }
+        
+        .crypto-ui { text-align: center; padding: 20px 0; }
+        .crypto-ui h2 { margin-top: 0; font-size: 24px; color: #1d1d1f; }
+        .crypto-ui p { color: #86868b; margin-bottom: 20px; }
+        .crypto-ui input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #d2d2d7; box-sizing: border-box; font-size: 18px; text-align: center; font-family: monospace; letter-spacing: 3px; }
+        .crypto-ui button { background-color: #34c759; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2); width: 100%; }
+        .crypto-error { color: #ff3b30; margin-top: 15px; display: none; font-weight: 600; }
+        .crypto-ui button:disabled { opacity: 0.6; cursor: wait; }
+        .error-text { color: #ff3b30; font-weight: 600; }
+
+        @media print {
+            body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+            .container { max-width: 100% !important; width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            .container > h1, .scanner-wrapper, #status, .matrix-container, #fpsCounter, .card-header, .button-group, .transfer-stats { display: none !important; }
+            .result-card { display: block !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; transform: none !important; opacity: 1 !important; background: white !important; }
+            #result-content { max-height: none !important; overflow-y: visible !important; padding: 0 !important; }
+            #result-content .table-scroll, #result-content .katex-display, #result-content pre { overflow: visible !important; }
+            #result-content th, #result-content td { white-space: normal !important; padding: 6px 8px !important; }
+            #result-content table { width: 100% !important; font-size: 11px !important; page-break-inside: auto; }
+            #result-content tr, #result-content .katex-display, #result-content pre, #result-content blockquote { page-break-inside: avoid; break-inside: avoid; }
+            #result-content pre { white-space: pre-wrap !important; }
+            #result-content h1, #result-content h2, #result-content h3 { page-break-after: avoid; break-after: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>QR-Receiver (Fountain)</h1>
+    
+    <div class="scanner-wrapper" id="scannerContainer">
+        <video id="videoElement" muted autoplay playsinline></video>
+        
+        <div id="scanFrame" class="scan-frame">
+            <div class="scan-corner top-left"></div>
+            <div class="scan-corner top-right"></div>
+            <div class="scan-corner bottom-left"></div>
+            <div class="scan-corner bottom-right"></div>
+            <div class="scan-laser" id="scanLaser"></div>
+        </div>
+    </div>
+    
+    <div id="status">Warte auf Kamera-Freigabe...</div>
+    
+    <div class="matrix-container" id="matrixContainer"></div>
+    <div id="fpsCounter">Pakete: 0.0/s · 0.0 KB/s</div>
+    
+    <div class="result-card" id="resultCard">
+        <div class="transfer-stats" id="transferStats" style="display: none;">
+            <div class="stat-grid">
+                <div class="stat"><div class="stat-value" id="statDuration">–</div><div class="stat-label">Dauer</div></div>
+                <div class="stat"><div class="stat-value" id="statAvg">–</div><div class="stat-label">Ø Durchsatz</div></div>
+                <div class="stat"><div class="stat-value" id="statPeak">–</div><div class="stat-label">Max. Durchsatz</div></div>
+            </div>
+            <div class="stat-line" id="statPackets"></div>
+            <div class="stat-line" id="statData"></div>
+        </div>
+        <div class="card-header" id="cardTypeHeader">Empfangene Daten</div>
+        <div id="result-content"></div>
+        
+        <div class="button-group" id="cardButtons">
+            <button class="btn-copy" id="copyBtn" onclick="copyText()">Kopieren 📋</button>
+            <button class="btn-share" id="shareBtn" onclick="shareText()">Teilen 📤</button>
+            <button class="btn-pdf" id="pdfBtn" onclick="exportToPDF()" style="display: none;">PDF Export 📄</button>
+            <button class="btn-txt" id="txtBtn" onclick="exportToTXT()" style="display: none;">TXT Export 💾</button>
+            <button class="btn-txt" id="mdBtn" onclick="exportToMD()" style="display: none;">MD Export 📝</button>
+            <button class="btn-csv" id="csvBtn" onclick="exportToCSV()" style="display: none;">CSV Export 📊</button>
+            <button class="btn-reset" onclick="resetScanner()">Neu scannen</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======================================================================
+    // QR-Tool Kern (Protokoll v3) – identisch in Sender und Reader
+    // ----------------------------------------------------------------------
+    // QR-Inhalt:  "QR3:" + Base45( Header[20] | Block[S] )
+    // Header:     0     Version (3)
+    //             1     Flags (Bit0 = Markdown, Bit1 = verschlüsselt)
+    //             2-5   Stream-ID (zufällig)
+    //             6-9   Datenlänge L in Bytes
+    //             10-11 Blockgrösse S in Bytes
+    //             12-15 Paketnummer
+    //             16-19 Prüfsumme (erste 4 Bytes SHA-256 der Daten)
+    // Daten:      Deflate(UTF-8-Text), optional danach AES-256-GCM
+    // Fountain:   Paket 0..K-1 = Block 0..K-1 direkt (systematisch),
+    //             ab Paket K = zufällige XOR-Kombination aller Blöcke.
+    //             Der Empfänger löst per Gauss-Elimination (GF(2)) und
+    //             braucht dadurch nur ~K+2 beliebige Pakete.
+    // ======================================================================
+    const QRT = (() => {
+        const PREFIX = "QR3:";
+        const VERSION = 3;
+        const HEADER_LEN = 20;
+        const FLAG_MARKDOWN = 1, FLAG_ENCRYPTED = 2;
+        const PBKDF2_ITERATIONS = 600000;
+        const B45 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
+        const B45_LOOKUP = new Int16Array(128).fill(-1);
+        for (let i = 0; i < B45.length; i++) B45_LOOKUP[B45.charCodeAt(i)] = i;
+
+        // ---------- Base45 (RFC 9285): passt in den dichten QR-Alphanumerik-Modus ----------
+        function base45Encode(bytes) {
+            let out = "";
+            for (let i = 0; i + 1 < bytes.length; i += 2) {
+                const n = bytes[i] * 256 + bytes[i + 1];
+                out += B45[n % 45] + B45[Math.floor(n / 45) % 45] + B45[Math.floor(n / 2025)];
+            }
+            if (bytes.length % 2) {
+                const n = bytes[bytes.length - 1];
+                out += B45[n % 45] + B45[Math.floor(n / 45)];
+            }
+            return out;
+        }
+
+        function base45Decode(str) {
+            const len = str.length;
+            if (len % 3 === 1) throw new Error("Base45: ungültige Länge");
+            const out = new Uint8Array(Math.floor(len / 3) * 2 + (len % 3 === 2 ? 1 : 0));
+            let o = 0;
+            for (let i = 0; i < len; i += 3) {
+                const c = B45_LOOKUP[str.charCodeAt(i)], d = B45_LOOKUP[str.charCodeAt(i + 1)];
+                if (c < 0 || d < 0) throw new Error("Base45: ungültiges Zeichen");
+                if (i + 2 < len) {
+                    const e = B45_LOOKUP[str.charCodeAt(i + 2)];
+                    if (e < 0) throw new Error("Base45: ungültiges Zeichen");
+                    const n = c + d * 45 + e * 2025;
+                    if (n > 0xFFFF) throw new Error("Base45: Überlauf");
+                    out[o++] = n >> 8; out[o++] = n & 0xFF;
+                } else {
+                    const n = c + d * 45;
+                    if (n > 0xFF) throw new Error("Base45: Überlauf");
+                    out[o++] = n;
+                }
+            }
+            return out;
+        }
+
+        // ---------- Pseudozufall: deterministisch aus Stream-ID + Paketnummer ----------
+        function mulberry32(seed) {
+            return function () {
+                seed = (seed + 0x6D2B79F5) >>> 0;
+                let t = seed;
+                t = Math.imul(t ^ (t >>> 15), t | 1);
+                t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                return (t ^ (t >>> 14)) >>> 0;
+            };
+        }
+
+        // Welche Blöcke stecken in Paket "index"? (Bitmaske über K Blöcke)
+        function coefficients(streamId, index, K) {
+            const words = new Uint32Array(Math.ceil(K / 32));
+            if (index < K) {
+                words[index >>> 5] = 1 << (index & 31);
+                return words;
+            }
+            const rnd = mulberry32((streamId ^ Math.imul(index, 0x9E3779B1)) >>> 0);
+            for (let w = 0; w < words.length; w++) words[w] = rnd();
+            const rest = K & 31;
+            if (rest) words[words.length - 1] &= (1 << rest) - 1 >>> 0;
+            if (words.every(v => v === 0)) { const b = index % K; words[b >>> 5] = 1 << (b & 31); }
+            return words;
+        }
+
+        function xorInto(target, source) {
+            for (let i = 0; i < target.length; i++) target[i] ^= source[i];
+        }
+
+        // ---------- Prüfsumme & Header ----------
+        async function checksum(bytes) {
+            const h = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+            return ((h[0] << 24) | (h[1] << 16) | (h[2] << 8) | h[3]) >>> 0;
+        }
+
+        function writeHeader(view, { flags, streamId, length, blockSize, index, sum }) {
+            view.setUint8(0, VERSION);
+            view.setUint8(1, flags);
+            view.setUint32(2, streamId);
+            view.setUint32(6, length);
+            view.setUint16(10, blockSize);
+            view.setUint32(12, index);
+            view.setUint32(16, sum);
+        }
+
+        function parsePacket(text) {
+            if (typeof text !== "string" || !text.startsWith(PREFIX)) return null;
+            let bytes;
+            try { bytes = base45Decode(text.slice(PREFIX.length)); } catch (e) { return null; }
+            if (bytes.length < HEADER_LEN + 1) return null;
+            const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+            if (v.getUint8(0) !== VERSION) return null;
+            const p = {
+                flags: v.getUint8(1),
+                streamId: v.getUint32(2),
+                length: v.getUint32(6),
+                blockSize: v.getUint16(10),
+                index: v.getUint32(12),
+                sum: v.getUint32(16),
+                data: bytes.subarray(HEADER_LEN)
+            };
+            if (p.blockSize < 1 || p.data.length !== p.blockSize) return null;
+            if (p.length < 1 || p.length > 50 * 1024 * 1024) return null;
+            p.K = Math.ceil(p.length / p.blockSize);
+            return p;
+        }
+
+        // ---------- Encoder (Sender) ----------
+        class FountainEncoder {
+            constructor(data, { blockSize, flags, streamId, sum }) {
+                this.length = data.length;
+                this.blockSize = blockSize;
+                this.K = Math.ceil(data.length / blockSize);
+                this.flags = flags; this.streamId = streamId; this.sum = sum;
+                this.blocks = [];
+                for (let i = 0; i < this.K; i++) {
+                    const b = new Uint8Array(blockSize); // letzter Block mit Nullen aufgefüllt
+                    b.set(data.subarray(i * blockSize, Math.min(data.length, (i + 1) * blockSize)));
+                    this.blocks.push(b);
+                }
+            }
+            packet(index) {
+                const buf = new Uint8Array(HEADER_LEN + this.blockSize);
+                writeHeader(new DataView(buf.buffer), { flags: this.flags, streamId: this.streamId, length: this.length, blockSize: this.blockSize, index, sum: this.sum });
+                const body = buf.subarray(HEADER_LEN);
+                const coef = coefficients(this.streamId, index, this.K);
+                for (let w = 0; w < coef.length; w++) {
+                    let bits = coef[w];
+                    while (bits) {
+                        const low = bits & -bits;
+                        xorInto(body, this.blocks[w * 32 + (31 - Math.clz32(low))]);
+                        bits ^= low;
+                    }
+                }
+                return PREFIX + base45Encode(buf);
+            }
+        }
+
+        // ---------- Decoder (Empfänger): inkrementelle Gauss-Elimination über GF(2) ----------
+        class FountainDecoder {
+            constructor(p) {
+                this.streamId = p.streamId; this.flags = p.flags; this.length = p.length;
+                this.blockSize = p.blockSize; this.sum = p.sum; this.K = p.K;
+                this.rows = new Array(this.K).fill(null); // rows[pivot] = { coef, data }
+                this.rank = 0;
+                this.seen = new Set();
+                this.packetsUsed = 0;
+            }
+            matches(p) {
+                return p.streamId === this.streamId && p.length === this.length && p.blockSize === this.blockSize && p.flags === this.flags && p.sum === this.sum;
+            }
+            // Gibt die neu "belegte" Blocknummer zurück, oder -1 wenn das Paket nichts Neues brachte
+            add(p) {
+                if (this.seen.has(p.index)) return -1;
+                this.seen.add(p.index);
+                if (this.rank === this.K) return -1;
+                const coef = coefficients(this.streamId, p.index, this.K);
+                const data = new Uint8Array(p.data);
+                for (let w = 0; w < coef.length; w++) {
+                    while (coef[w]) {
+                        const pivot = w * 32 + (31 - Math.clz32(coef[w] & -coef[w]));
+                        const row = this.rows[pivot];
+                        if (!row) {
+                            this.rows[pivot] = { coef, data };
+                            this.rank++;
+                            this.packetsUsed++;
+                            return pivot;
+                        }
+                        xorInto(coef, row.coef); // Zeile hat nur Bits >= pivot
+                        xorInto(data, row.data);
+                    }
+                }
+                return -1; // linear abhängig
+            }
+            isComplete() { return this.rank === this.K; }
+            // Rückwärts-Einsetzen: höchster Pivot zuerst
+            result() {
+                const K = this.K, S = this.blockSize;
+                const blocks = new Array(K);
+                for (let p = K - 1; p >= 0; p--) {
+                    const { coef, data } = this.rows[p];
+                    const out = new Uint8Array(data);
+                    for (let w = p >>> 5; w < coef.length; w++) {
+                        let bits = coef[w];
+                        while (bits) {
+                            const low = bits & -bits;
+                            const q = w * 32 + (31 - Math.clz32(low));
+                            if (q > p) xorInto(out, blocks[q]);
+                            bits ^= low;
+                        }
+                    }
+                    blocks[p] = out;
+                }
+                const all = new Uint8Array(K * S);
+                blocks.forEach((b, i) => all.set(b, i * S));
+                return all.subarray(0, this.length);
+            }
+        }
+
+        // ---------- Kompression (eingebaut im Browser) ----------
+        async function pipe(bytes, stream) {
+            const out = new Response(new Blob([bytes]).stream().pipeThrough(stream));
+            return new Uint8Array(await out.arrayBuffer());
+        }
+        function hasCompression() { return typeof CompressionStream === "function" && typeof DecompressionStream === "function"; }
+        const deflate = bytes => pipe(bytes, new CompressionStream("deflate-raw"));
+        const inflate = bytes => pipe(bytes, new DecompressionStream("deflate-raw"));
+
+        // ---------- Verschlüsselung: PBKDF2-SHA256 + AES-256-GCM ----------
+        async function deriveKey(passphrase, salt, usage) {
+            const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+            return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+                base, { name: "AES-GCM", length: 256 }, false, [usage]);
+        }
+        async function encrypt(bytes, passphrase) {
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const key = await deriveKey(passphrase, salt, "encrypt");
+            const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, bytes));
+            const out = new Uint8Array(28 + cipher.length);
+            out.set(salt, 0); out.set(iv, 16); out.set(cipher, 28);
+            return out;
+        }
+        async function decrypt(bytes, passphrase) {
+            if (bytes.length < 28 + 16) throw new Error("Daten zu kurz");
+            const key = await deriveKey(passphrase, bytes.slice(0, 16), "decrypt");
+            return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: bytes.slice(16, 28) }, key, bytes.slice(28)));
+        }
+
+        return { PREFIX, FLAG_MARKDOWN, FLAG_ENCRYPTED, HEADER_LEN, base45Encode, base45Decode, checksum, parsePacket,
+                 FountainEncoder, FountainDecoder, hasCompression, deflate, inflate, encrypt, decrypt };
+    })();
+
+
+    // Alte Formate (v1/v2: "001/005|CM|...") nur noch erkennen, um einen Hinweis zu zeigen
+    const LEGACY_REGEX = /^\d{1,5}\/\d{1,5}\|[A-Z]{2}\|/;
+
+    let decoder = null;
+    let rawAssembledText = "";
+    let encryptedPayload = null;
+    let isMarkdownStream = false;
+    let scanTimestamps = [];
+    let packetCount = 0;
+    let legacyWarned = false;
+    let detectedCsv = "";      // erkannte CSV-Zeilen (original, für den CSV-Export)
+    let transferStats = null;  // Zeitstempel der Pakete für die Statistik nach dem Empfang
+    let receptionDone = false; // nach Abschluss keine Pakete mehr annehmen (bis "Neu scannen")
+
+    let videoElement = null;
+    let canvasElement = null;
+    let canvasContext = null;
+    let isScanning = false;
+    let mediaStream = null;
+    let scanLoopRunning = false;
+
+    function setStatus(text) {
+        document.getElementById("status").innerText = text;
+    }
+
+    async function startCamera() {
+        try {
+            // Höhere Auflösung, damit auch grosse Pakete und mehrere Codes pro Bild lesbar sind
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
+            });
+            videoElement.srcObject = mediaStream;
+            setStatus("Bereit. Richte die Kamera auf den QR-Stream.");
+            isScanning = true;
+            await new Promise(resolve => {
+                if (videoElement.readyState >= 1) resolve();
+                else videoElement.onloadedmetadata = () => resolve();
+            });
+            await videoElement.play().catch(() => {});
+            scanLoop();
+        } catch (err) {
+            setStatus("Kamerafehler: " + err.message);
+        }
+    }
+
+    // Kamera nach erfolgreichem Empfang wirklich ausschalten
+    function stopCamera() {
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(t => t.stop());
+            mediaStream = null;
+        }
+        if (videoElement) videoElement.srcObject = null;
+    }
+
+    async function initScanner() {
+        videoElement = document.getElementById("videoElement");
+        canvasElement = document.createElement("canvas");
+        canvasContext = canvasElement.getContext("2d", { willReadFrequently: true });
+
+        if (!navigator.share) {
+            document.getElementById('shareBtn').style.display = 'none';
+        }
+        if (typeof zbarWasm === "undefined" || typeof DOMPurify === "undefined") {
+            setStatus("❌ Bibliotheken konnten nicht geladen werden (offline oder blockiert).");
+            return;
+        }
+        if (!QRT.hasCompression() || !window.crypto || !crypto.subtle) {
+            setStatus("❌ Browser zu alt: bitte iOS 16.4+ bzw. aktuelles Chrome/Firefox verwenden.");
+            return;
+        }
+        await startCamera();
+    }
+
+    async function scanLoop() {
+        if (scanLoopRunning) return; // nie zwei Schleifen parallel
+        scanLoopRunning = true;
+        try {
+            while (isScanning) {
+                await new Promise(resolve => setTimeout(resolve, 15));
+
+                if (videoElement.readyState >= 2 && videoElement.videoWidth > 0) {
+                    if (canvasElement.width !== videoElement.videoWidth || canvasElement.height !== videoElement.videoHeight) {
+                        canvasElement.width = videoElement.videoWidth;
+                        canvasElement.height = videoElement.videoHeight;
+                    }
+                    canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                    const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+
+                    try {
+                        const symbols = await zbarWasm.scanImageData(imageData);
+                        // Alle Codes im Bild verarbeiten (Sender kann 2 oder 4 gleichzeitig zeigen)
+                        for (const sym of symbols || []) {
+                            if (!isScanning) break;
+                            onScanSuccess(sym.decode("utf-8"));
+                        }
+                    } catch (error) {
+                        console.error("ZBar Fehler: ", error);
+                    }
+                }
+            }
+        } finally {
+            scanLoopRunning = false;
+        }
+    }
+
+    function calculateLiveRate() {
+        const now = performance.now();
+        scanTimestamps.push(now);
+        scanTimestamps = scanTimestamps.filter(t => now - t <= 2000);
+        let rate = 0;
+        if (scanTimestamps.length > 1) {
+            rate = (scanTimestamps.length - 1) / ((now - scanTimestamps[0]) / 1000);
+        }
+        const kbps = decoder ? (rate * decoder.blockSize / 1024).toFixed(1) : "0.0";
+        document.getElementById("fpsCounter").innerText = `Pakete: ${rate.toFixed(1)}/s · ${kbps} KB/s`;
+    }
+
+    function buildLiveMatrix(totalBlocks) {
+        const container = document.getElementById("matrixContainer");
+        container.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        for (let i = 1; i <= totalBlocks; i++) {
+            const box = document.createElement("div");
+            box.id = `matrix-box-${i}`;
+            box.className = "matrix-box";
+            box.innerText = i;
+            fragment.appendChild(box);
+        }
+        container.appendChild(fragment);
+    }
+
+    function onScanSuccess(decodedText) {
+        if (receptionDone || typeof decodedText !== "string") return;
+
+        const packet = QRT.parsePacket(decodedText);
+        if (!packet) {
+            if (!legacyWarned && LEGACY_REGEX.test(decodedText)) {
+                legacyWarned = true;
+                setStatus("⚠️ Alter Sender erkannt – bitte QR-Streamer.html aktualisieren.");
+            }
+            return;
+        }
+
+        // Neuer Stream = andere Stream-ID (oder andere Grunddaten)
+        if (!decoder || !decoder.matches(packet)) {
+            decoder = new QRT.FountainDecoder(packet);
+            transferStats = { start: performance.now(), times: [] };
+            packetCount = 0;
+            scanTimestamps = [];
+            buildLiveMatrix(decoder.K);
+        }
+
+        packetCount++;
+        transferStats.times.push(performance.now());
+        calculateLiveRate();
+        const newBlock = decoder.add(packet);
+        if (newBlock >= 0) {
+            // Zeigt den Fortschritt (Rang): jede Kachel = ein Block mehr, der rekonstruierbar ist
+            const box = document.getElementById(`matrix-box-${newBlock + 1}`);
+            if (box) box.classList.add("loaded");
+        }
+        setStatus(`Empfange: ${decoder.rank} von ${decoder.K} Blöcken`);
+
+        if (decoder.isComplete()) {
+            finishReception();
+        }
+    }
+
+    function revealCard() {
+        const card = document.getElementById("resultCard");
+        card.style.display = "block";
+        setTimeout(() => { card.classList.add("reveal"); }, 50);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+
+    function showError(header, message) {
+        document.getElementById("cardTypeHeader").innerText = header;
+        const content = document.getElementById("result-content");
+        content.innerHTML = "";
+        const p = document.createElement("p");
+        p.className = "error-text";
+        p.innerText = message;
+        content.appendChild(p);
+        ["copyBtn", "shareBtn", ...EXPORT_BUTTONS].forEach(id => document.getElementById(id).style.display = "none");
+        document.getElementById("cardButtons").style.display = "flex";
+        revealCard();
+        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    }
+
+    function hideScannerUi() {
+        isScanning = false;
+        stopCamera();
+        document.getElementById("scanLaser").style.display = "none";
+        document.getElementById("scannerContainer").classList.add("minimized");
+        document.getElementById("status").style.display = "none";
+        document.getElementById("fpsCounter").style.display = "none";
+        document.getElementById("matrixContainer").style.display = "none";
+    }
+
+    async function finishReception() {
+        receptionDone = true;
+        hideScannerUi();
+        const dec = decoder;
+        decoder = null;
+        showTransferStats(dec, transferStats, performance.now());
+
+        const data = dec.result();
+        // Prüfsumme über die Gesamtdaten (fängt jede Art von Beschädigung ab)
+        if (await QRT.checksum(data) !== dec.sum) {
+            showError("❌ FEHLER", "Prüfsumme stimmt nicht – die Daten sind beschädigt. Bitte neu scannen.");
+            return;
+        }
+        isMarkdownStream = !!(dec.flags & QRT.FLAG_MARKDOWN);
+
+        if (dec.flags & QRT.FLAG_ENCRYPTED) {
+            encryptedPayload = data;
+            document.getElementById("cardTypeHeader").innerText = "🔒 VERSCHLÜSSELTER EMPFANG";
+            document.getElementById("cardButtons").style.display = "none";
+            document.getElementById("result-content").innerHTML = `
+                <div class="crypto-ui">
+                    <h2>Geschützte Daten</h2>
+                    <p>Dieser Stream ist verschlüsselt (AES-256-GCM). Bitte gib den PIN bzw. die Passphrase ein.</p>
+                    <input type="password" id="receiverPin" placeholder="PIN eingeben" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button id="decryptBtn">Entschlüsseln 🔓</button>
+                    <p class="crypto-error" id="decryptError">Falscher PIN oder beschädigte Daten.</p>
+                </div>
+            `;
+            document.getElementById("decryptBtn").addEventListener("click", attemptDecryption);
+            document.getElementById("receiverPin").addEventListener("keydown", (e) => { if (e.key === "Enter") attemptDecryption(); });
+            revealCard();
+        } else {
+            await showDecompressed(data, true);
+        }
+    }
+
+    let decryptInProgress = false;
+    async function attemptDecryption() {
+        if (decryptInProgress) return;
+        const pinField = document.getElementById("receiverPin");
+        const btn = document.getElementById("decryptBtn");
+        const errorEl = document.getElementById("decryptError");
+        const pin = pinField.value;
+        if (!pin) return;
+
+        decryptInProgress = true;
+        btn.disabled = true;
+        btn.innerText = "Entschlüssele…";
+        errorEl.style.display = "none";
+        let plain = null;
+        try {
+            plain = await QRT.decrypt(encryptedPayload, pin);
+        } catch (e) {
+            pinField.value = "";
+            errorEl.style.display = "block";
+            btn.disabled = false;
+            btn.innerText = "Entschlüsseln 🔓";
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        } finally {
+            decryptInProgress = false;
+        }
+        if (plain) {
+            encryptedPayload = null;
+            document.getElementById("cardButtons").style.display = "flex";
+            await showDecompressed(plain, false);
+        }
+    }
+
+    async function showDecompressed(bytes, reveal) {
+        let text;
+        try {
+            text = new TextDecoder("utf-8", { fatal: true }).decode(await QRT.inflate(bytes));
+        } catch (e) {
+            showError("❌ FEHLER", "Die Daten konnten nicht dekomprimiert werden. Bitte neu scannen.");
+            return;
+        }
+        displayText(text);
+        if (reveal) revealCard();
+    }
+
+    // Der intelligente und fehlertolerante CSV-Detektor
+    function formatIfCsv(text) {
+        detectedCsv = "";
+        const lines = text.trim().split('\n');
+        if (lines.length < 3) return text;
+
+        const separator = lines[0].includes(';') ? ';' : (lines[0].includes(',') ? ',' : null);
+        if (!separator) return text;
+
+        const expectedColumns = lines[0].split(separator).length;
+        if (expectedColumns < 2) return text;
+
+        let validCsvLines = [];
+        let extraTextLines = [];
+        let isStillCsv = true;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (line === "") {
+                if (!isStillCsv) extraTextLines.push(line);
+                continue;
+            }
+            if (isStillCsv) {
+                if (line.split(separator).length === expectedColumns) {
+                    validCsvLines.push(line);
+                } else {
+                    isStillCsv = false;
+                    extraTextLines.push(line);
+                }
+            } else {
+                extraTextLines.push(line);
+            }
+        }
+
+        if (validCsvLines.length < 2) return text;
+        detectedCsv = validCsvLines.join("\n");
+
+        let markdownTable = "";
+        validCsvLines.forEach((line, index) => {
+            const columns = line.split(separator).map(cell => cell.trim().replace(/\|/g, "\\|"));
+            markdownTable += "| " + columns.join(" | ") + " |\n";
+            if (index === 0) {
+                markdownTable += "|" + columns.map(() => "---").join("|") + "|\n";
+            }
+        });
+
+        if (extraTextLines.length > 0) {
+            markdownTable += "\n\n" + extraTextLines.join("\n");
+        }
+        return markdownTable;
+    }
+
+    // Markdown -> HTML -> DOMPurify (verhindert Script-Injection über präparierte QR-Codes)
+    // ---------- Transfer-Statistik ----------
+    function formatSize(bytes) {
+        if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(2) + "\u00a0MB";
+        if (bytes >= 1024) return (bytes / 1024).toFixed(1) + "\u00a0KB";
+        return bytes + "\u00a0B";
+    }
+
+    function formatDuration(ms) {
+        if (ms < 1000) return (ms / 1000).toFixed(2) + " s";
+        if (ms < 60000) return (ms / 1000).toFixed(1) + " s";
+        const min = Math.floor(ms / 60000);
+        return `${min} min ${Math.round((ms % 60000) / 1000)} s`;
+    }
+
+    function formatRate(bytesPerSecond) {
+        return Number.isFinite(bytesPerSecond) && bytesPerSecond > 0 ? formatSize(Math.round(bytesPerSecond)) + "/s" : "–";
+    }
+
+    // Statistik berechnen:
+    //  - Dauer: erstes gelesenes Paket bis zum vollständigen Empfang
+    //  - Ø Durchsatz: übertragene Nutzdaten / Dauer
+    //  - Max. Durchsatz: bestes 1-Sekunden-Fenster (gelesene Pakete × Blockgrösse)
+    function computeStats(dec, stats, end) {
+        const duration = Math.max(0, end - stats.start);
+        const times = stats.times;
+        let peak;
+        if (duration < 1000) {
+            peak = duration > 0 ? times.length * dec.blockSize / (duration / 1000) : NaN;
+        } else {
+            let maxInWindow = 0;
+            for (let i = 0, j = 0; i < times.length; i++) {
+                while (times[i] - times[j] > 1000) j++;
+                maxInWindow = Math.max(maxInWindow, i - j + 1);
+            }
+            peak = maxInWindow * dec.blockSize;
+        }
+        const avg = duration > 0 ? dec.length / (duration / 1000) : NaN;
+        return { duration, avg, peak: Math.max(peak || 0, avg || 0), read: times.length, unique: dec.seen.size, needed: dec.K, bytes: dec.length };
+    }
+
+    function showTransferStats(dec, stats, end) {
+        const box = document.getElementById("transferStats");
+        if (!stats || !stats.times.length) { box.style.display = "none"; return; }
+        const st = computeStats(dec, stats, end);
+        document.getElementById("statDuration").textContent = st.duration < 50 ? "sofort" : formatDuration(st.duration);
+        document.getElementById("statAvg").textContent = st.duration < 50 ? "–" : formatRate(st.avg);
+        document.getElementById("statPeak").textContent = st.duration < 50 ? "–" : formatRate(st.peak);
+        const efficiency = Math.round(st.needed / Math.max(st.unique, 1) * 100);
+        document.getElementById("statPackets").textContent =
+            `${st.read}\u00a0${st.read === 1 ? "Paket" : "Pakete"} gelesen · ${st.needed}\u00a0benötigt (${efficiency}\u00a0%\u00a0Effizienz)`;
+        document.getElementById("statData").textContent = `${formatSize(st.bytes)} übertragen`;
+        document.getElementById("statData").dataset.bytes = st.bytes;
+        box.style.display = "block";
+    }
+
+    // Nach dem Entpacken: Textgrösse und Kompressionsrate ergänzen
+    function updateTextSizeInStats(text) {
+        const el = document.getElementById("statData");
+        const sent = parseInt(el.dataset.bytes || "0", 10);
+        if (!sent) return;
+        const textBytes = new TextEncoder().encode(text).length;
+        el.textContent = `${formatSize(sent)} übertragen →\u00a0${formatSize(textBytes)}\u00a0Text` +
+            (textBytes > sent ? ` (Kompression\u00a0${Math.round((1 - sent / textBytes) * 100)}\u00a0%)` : "");
+    }
+
+    // ---------- Formeln schützen ----------
+    // Problem vorher: marked verarbeitete den Text zuerst. Mit "breaks: true" wurde jeder Zeilenumbruch
+    // innerhalb von $$ … $$ zu <br>, ausserdem wurden "\\" und "_…_" verändert. KaTeX fand die Formeln
+    // danach nicht mehr. Lösung: Formeln VOR marked herauslösen (Code-Blöcke ausgenommen), durch
+    // Platzhalter ersetzen und nach dem Bereinigen direkt mit KaTeX einsetzen.
+    const MATH_TOKEN = /KXMATH([DI])(\d+)X/g;
+
+    function extractMath(markdown) {
+        const formulas = [];
+        const add = (tex, display) => { formulas.push({ tex, display }); return `KXMATH${display ? "D" : "I"}${formulas.length - 1}X`; };
+        // Code-Blöcke (```…```, ~~~…~~~) und Inline-Code (`…`) bleiben unangetastet
+        const parts = markdown.split(/(```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|`[^`\n]+`)/);
+        for (let k = 0; k < parts.length; k += 2) {
+            parts[k] = parts[k]
+                // Block-Formeln $$ … $$ (auch mehrzeilig, in Listen und Zitaten)
+                .replace(/\$\$([\s\S]+?)\$\$/g, (m, tex, offset, whole) => {
+                    const lineStart = whole.lastIndexOf("\n", offset - 1) + 1;
+                    const inQuote = /^\s*>/.test(whole.slice(lineStart, offset));
+                    if (inQuote) tex = tex.replace(/\n[ \t]*>[ \t]?/g, "\n"); // "> " am Zeilenanfang entfernen
+                    return add(tex.trim(), true);
+                })
+                // Inline-Formeln $…$ (kein Leerzeichen innen am Rand, keine Zahl direkt danach -> "5 $" bleibt Text)
+                .replace(/(^|[^\\$])\$(?!\s)([^$\n]+?)(?<![\s\\])\$(?!\d)/g, (m, before, tex) => before + add(tex, false));
+        }
+        return { text: parts.join(""), formulas };
+    }
+
+    function insertMath(container, formulas) {
+        if (!formulas.length) return;
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) if (walker.currentNode.nodeValue.includes("KXMATH")) nodes.push(walker.currentNode);
+        for (const node of nodes) {
+            const frag = document.createDocumentFragment();
+            let last = 0;
+            const value = node.nodeValue;
+            for (const m of value.matchAll(MATH_TOKEN)) {
+                const f = formulas[+m[2]];
+                if (!f) continue;
+                frag.appendChild(document.createTextNode(value.slice(last, m.index)));
+                const el = document.createElement(f.display ? "div" : "span");
+                try {
+                    katex.render(f.tex, el, { displayMode: f.display, throwOnError: false, trust: false, strict: "ignore", output: "htmlAndMathml" });
+                } catch (e) {
+                    el.textContent = f.display ? `$$${f.tex}$$` : `$${f.tex}$`;
+                }
+                frag.appendChild(el);
+                last = m.index + m[0].length;
+            }
+            frag.appendChild(document.createTextNode(value.slice(last)));
+            // Steht eine Block-Formel allein in einem Absatz, den leeren <p> durch die Formel ersetzen
+            const parent = node.parentNode;
+            parent.replaceChild(frag, node);
+            if (parent.tagName === "P" && parent.childNodes.length && [...parent.childNodes].every(n =>
+                    (n.nodeType === 3 && !n.nodeValue.trim()) || n.nodeName === "BR" || (n.nodeName === "DIV" && n.querySelector(".katex-display")))) {
+                parent.replaceWith(...[...parent.childNodes].filter(n => n.nodeName === "DIV"));
+            }
+        }
+    }
+
+    // Markdown -> HTML -> DOMPurify (verhindert Script-Injection über präparierte QR-Codes).
+    // Formeln werden erst danach mit KaTeX eingesetzt (KaTeX erzeugt selbst sicheres HTML, trust: false).
+    function renderSafeMarkdown(markdown, container) {
+        const { text, formulas } = extractMath(markdown);
+        const html = marked.parse(text, { breaks: true, mangle: false, headerIds: false });
+        container.innerHTML = DOMPurify.sanitize(html, {
+            USE_PROFILES: { html: true },
+            FORBID_TAGS: ['style', 'form', 'input', 'button', 'textarea', 'select'],
+            FORBID_ATTR: ['style']
+        });
+        // Breite Tabellen auf dem Handy horizontal scrollbar machen statt sie zu quetschen
+        container.querySelectorAll("table").forEach(t => {
+            const wrap = document.createElement("div");
+            wrap.className = "table-scroll";
+            t.replaceWith(wrap);
+            wrap.appendChild(t);
+        });
+        if (typeof katex !== "undefined") insertMath(container, formulas);
+    }
+
+    function displayText(finalDecodedText) {
+        rawAssembledText = finalDecodedText; // Unangetastet für den Kopieren-Button
+        updateTextSizeInStats(finalDecodedText);
+        document.getElementById("result-content").scrollTop = 0; // immer oben beginnen
+
+        const contentArea = document.getElementById("result-content");
+        const headerArea = document.getElementById("cardTypeHeader");
+        const show = id => document.getElementById(id).style.display = "flex";
+        hideExportButtons();
+
+        if (isMarkdownStream) {
+            const textForDisplay = formatIfCsv(finalDecodedText);
+            const isCsv = (textForDisplay !== finalDecodedText);
+
+            renderSafeMarkdown(textForDisplay, contentArea);
+            contentArea.querySelectorAll("a[href]").forEach(a => {
+                a.setAttribute("target", "_blank");
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+
+            headerArea.innerText = isCsv ? "📊 Empfang: CSV Tabelle" : "📝 Empfang: Markdown Dokument";
+            show("pdfBtn");                 // Markdown-Modus: PDF + Original als .md
+            show("mdBtn");
+            if (isCsv) show("csvBtn");      // erkannte Tabelle zusätzlich als .csv
+            contentArea.style.whiteSpace = "normal";
+
+        } else {
+            contentArea.textContent = finalDecodedText;
+            headerArea.innerText = "📄 Empfang: Reiner Text (Plaintext)";
+            show("txtBtn");                 // Text-Modus: Export als .txt
+            contentArea.style.whiteSpace = "pre-wrap";
+        }
+
+        document.getElementById("copyBtn").style.display = "flex";
+        if (navigator.share) document.getElementById("shareBtn").style.display = "flex";
+    }
+
+    // ---------- Datei-Export ----------
+    const EXPORT_BUTTONS = ["pdfBtn", "txtBtn", "mdBtn", "csvBtn"];
+
+    function hideExportButtons() {
+        EXPORT_BUTTONS.forEach(id => document.getElementById(id).style.display = "none");
+    }
+
+    function downloadFile(content, extension, mimeType) {
+        if (!content) return;
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const fileName = `QR-Empfang_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}.${extension}`;
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        // URL erst später freigeben, sonst bricht der Download auf manchen Geräten ab
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    // Text-Modus: empfangener Text unverändert als .txt (UTF-8)
+    function exportToTXT() {
+        downloadFile(rawAssembledText, "txt", "text/plain;charset=utf-8");
+    }
+
+    // Markdown-Modus: Originaltext inkl. Formatierung als .md (z.B. für Obsidian, Notion, VS Code)
+    function exportToMD() {
+        downloadFile(rawAssembledText, "md", "text/markdown;charset=utf-8");
+    }
+
+    // Erkannte Tabelle als .csv. Das unsichtbare BOM am Anfang sorgt dafür,
+    // dass Excel Umlaute korrekt anzeigt; Numbers/Google Sheets ignorieren es.
+    function exportToCSV() {
+        if (!detectedCsv) return;
+        downloadFile("\uFEFF" + detectedCsv.replace(/\n/g, "\r\n") + "\r\n", "csv", "text/csv;charset=utf-8");
+    }
+
+    function exportToPDF() {
+        window.print();
+    }
+
+    function resetScanner() {
+        const card = document.getElementById("resultCard");
+        card.classList.remove("reveal");
+
+        setTimeout(() => {
+            card.style.display = "none";
+            document.getElementById("result-content").innerHTML = "";
+            document.getElementById("scannerContainer").classList.remove("minimized");
+            document.getElementById("matrixContainer").style.display = "grid";
+            document.getElementById("matrixContainer").innerHTML = "";
+            document.getElementById("fpsCounter").style.display = "block";
+            document.getElementById("fpsCounter").innerText = "Pakete: 0.0/s · 0.0 KB/s";
+            document.getElementById("status").style.display = "block";
+            document.getElementById("scanLaser").style.display = "block";
+            document.getElementById("cardButtons").style.display = "flex";
+            hideExportButtons();
+            detectedCsv = "";
+
+            decoder = null;
+            rawAssembledText = "";
+            encryptedPayload = null;
+            scanTimestamps = [];
+            packetCount = 0;
+            legacyWarned = false;
+            receptionDone = false;
+            transferStats = null;
+            document.getElementById("transferStats").style.display = "none";
+
+            setStatus("Starte Kamera...");
+            const copyBtn = document.getElementById("copyBtn");
+            copyBtn.innerText = "Kopieren 📋";
+            copyBtn.style.backgroundColor = "#0071e3";
+
+            startCamera();
+        }, 400);
+    }
+
+    function copyText() {
+        if (!rawAssembledText) return;
+        navigator.clipboard.writeText(rawAssembledText).then(() => {
+            const copyBtn = document.getElementById("copyBtn");
+            copyBtn.innerText = "Gesichert! ✓";
+            copyBtn.style.backgroundColor = "#34c759";
+            if (navigator.vibrate) navigator.vibrate(50);
+            setTimeout(() => {
+                copyBtn.innerText = "Kopieren 📋";
+                copyBtn.style.backgroundColor = "#0071e3";
+            }, 2000);
+        }).catch(() => {
+            alert("Kopieren nicht möglich – bitte Text manuell markieren.");
+        });
+    }
+
+    function shareText() {
+        if (!rawAssembledText || !navigator.share) return;
+        navigator.share({ title: 'Sicherer Datenempfang (QR)', text: rawAssembledText }).catch(() => {});
+    }
+
+    window.addEventListener('pagehide', stopCamera);
+    window.addEventListener('DOMContentLoaded', initScanner);
+</script>
+
+</body>
+</html>

@@ -148,7 +148,9 @@ try {
   ok('Einheiten: Service Worker fängt keine fremden Adressen ab (Statistik)', a.read(EH + 'sw.js').includes('if (url.origin !== self.location.origin) return;'));
 
   // 9. Besucherstatistik (Umami) und Datenschutz: auf allen Seiten und Tools dieselbe Zeile, sonst kein fremdes Skript
-  const pages = builtA.filter(p => p.endsWith('.html') && !/^google[0-9a-f]+\.html$/.test(p));
+  // Ausnahme QR-tool/: unveränderte Kopie des eigenen Repos QR-tool, früher von GitHub Pages unter der Domain ausgeliefert (siehe CLAUDE.md)
+  for (const p of ['QR-tool/QR-Reader.html', 'QR-tool/QR-Streamer.html']) ok('QR-tool erreichbar wie früher: /' + p, builtA.includes(p));
+  const pages = builtA.filter(p => p.endsWith('.html') && !/^google[0-9a-f]+\.html$/.test(p) && !p.startsWith('QR-tool/'));
   for (const p of pages) {
     const html = a.read(p);
     ok('Statistik genau einmal eingebunden: ' + p, html.split(UMAMI).length === 2);
@@ -184,7 +186,7 @@ try {
   ok('Formeln: a * b * c unverändert', formeln.includes('<annotation encoding="application/x-tex">a * b * c</annotation>'));
   ok('Formeln: KaTeX-Stylesheet geladen', formeln.includes('href="/assets/katex/katex.min.css"'));
   ok('Ohne Formeln: kein KaTeX-Stylesheet', !b.read('blog/text/index.html').includes('katex.min.css'));
-  ok('Kein KaTeX-JavaScript', !walk(B).filter(p => p.endsWith('.html')).some(p => /katex[^"]*\.js/.test(b.read(p))));
+  ok('Kein KaTeX-JavaScript', !walk(B).filter(p => p.endsWith('.html') && !p.startsWith('QR-tool/')).some(p => /katex[^"]*\.js/.test(b.read(p))));
   ok('Dollar als Text (\\$ und .nomath)', fdoc.querySelector('article').textContent.includes('Ein Preis von $5 und $10 bleibt Text.'));
   ok('Dollar im Code unverändert', formeln.includes('<code>$x$</code>') && formeln.includes('print("$HOME")'));
   ok('Typografie wie kramdown', fdoc.querySelector('article').textContent.includes('“Anführungszeichen” – Strich — Geviert … Punkte.'));
