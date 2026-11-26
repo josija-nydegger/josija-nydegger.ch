@@ -76,6 +76,6 @@ Alles davon ist inzwischen behoben. Was ich daraus mitnehme: KI ist ein enormer 
 
 ## Ausprobieren
 
-Den Empfänger kannst du direkt auf dem Handy öffnen: [QR-Reader](https://josija-nydegger.ch/QR-tool/QR-Reader.html). Den Sender öffnest du auf dem Laptop: [QR-Streamer](https://josija-nydegger.ch/QR-tool/QR-Streamer.html). Du kannst die Datei auch speichern und ohne Internet per Doppelklick öffnen. Den gesamten Code findest du auf [GitHub](https://github.com/josija-nydegger/QR-tool).
+Den Empfänger kannst du direkt auf dem Handy öffnen: [QR-Reader](https://josija-nydegger.ch/QR-tool/QR-Reader). Den Sender öffnest du auf dem Laptop: [QR-Streamer](https://josija-nydegger.ch/QR-tool/QR-Streamer). Du kannst die Datei auch speichern und ohne Internet per Doppelklick öffnen. Den gesamten Code findest du auf [GitHub](https://github.com/josija-nydegger/QR-tool).
 
 Als Nächstes möchte ich den Empfänger noch schneller machen und neben Text auch ganze Dateien übertragen können.

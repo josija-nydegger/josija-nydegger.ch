@@ -30,7 +30,7 @@ export const i18n = {
     themeSystem: 'System',
     // Fusszeile
     privacy: 'Datenschutz',
-    privacyUrl: '/datenschutz.html'
+    privacyUrl: '/datenschutz'
   },
   en: {
     name: 'English',
@@ -57,7 +57,7 @@ export const i18n = {
     themeSystem: 'System',
     // Footer
     privacy: 'Privacy',
-    privacyUrl: '/en/privacy.html'
+    privacyUrl: '/en/privacy'
   }
 } as const satisfies Record<Lang, Record<string, string>>;
 

@@ -1,0 +1,8 @@
+# Cloudflare: dauerhafte Weiterleitungen (301) der früheren Adressen mit .html (bis November 2026).
+# Ohne diese Zeilen leitet Cloudflare auch weiter, aber nur vorläufig (307).
+/cv.html /cv 301
+/en/cv.html /en/cv 301
+/datenschutz.html /datenschutz 301
+/en/privacy.html /en/privacy 301
+/QR-tool/QR-Reader.html /QR-tool/QR-Reader 301
+/QR-tool/QR-Streamer.html /QR-tool/QR-Streamer 301

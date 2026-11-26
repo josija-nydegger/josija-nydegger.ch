@@ -46,7 +46,8 @@ function common(label, out) {
   const built = walk(out);
   const exists = url => {
     const rel = decodeURIComponent(url.split('#')[0].split('?')[0].replace(/^\//, ''));
-    return [rel, rel + 'index.html', rel.replace(/\/$/, '') + '/index.html', rel || 'index.html'].some(s.has);
+    // Cloudflare liefert seite.html unter /seite aus (html_handling "auto-trailing-slash")
+    return [rel, rel + '.html', rel + 'index.html', rel.replace(/\/$/, '') + '/index.html', rel || 'index.html'].some(s.has);
   };
   for (const p of built.filter(p => p.endsWith('.html'))) {
     const html = s.read(p).replace(/<!--[\s\S]*?-->/g, '');   // Beispiel-Links in HTML-Kommentaren ignorieren
@@ -79,6 +80,13 @@ try {
   for (const f of refFiles.filter(f => !REMOVED.includes(f))) ok('Adresse der Referenz vorhanden: ' + f, a.has(f));
   for (const f of REMOVED) ok('Bewusst entfernt: ' + f, !a.has(f));
 
+  // 2b. Frühere Adressen mit .html: dauerhafte Weiterleitung (301) in _redirects auf eine vorhandene Seite
+  ok('_redirects gebaut', a.has('_redirects'));
+  const redirects = new Map((a.has('_redirects') ? a.read('_redirects') : '').split('\n').filter(l => l.trim() && !l.startsWith('#')).map(l => l.trim().split(/\s+/)).map(([from, to, code]) => [from, { to, code }]));
+  for (const [from, { to, code }] of redirects) ok(`Weiterleitung ${from} → ${to}`, code === '301' && a.has(from.slice(1)) && a.has(to.slice(1) + '.html'));
+  for (const u of ['/cv.html', '/en/cv.html', '/datenschutz.html', '/en/privacy.html', '/QR-tool/QR-Reader.html', '/QR-tool/QR-Streamer.html']) ok('Weiterleitung vorhanden: ' + u, redirects.has(u));
+  ok('Kein eigener Worker-Code (nur statische Dateien)', !/"main"\s*:/.test(fs.readFileSync(path.join(ROOT, 'wrangler.jsonc'), 'utf8')));
+
   // 3. Keine Reste aus Vorlagen (ohne die unveränderten Dateien aus public/, z. B. Tools mit eigenem JavaScript)
   const generated = builtA.filter(p => /\.(html|xml)$/.test(p) && !fs.existsSync(path.join(ROOT, 'public', p)));
   for (const p of generated) {
@@ -94,7 +102,7 @@ try {
   ok('E-Mail kodiert eingebunden', /atob\(emailB64\)/.test(a.read('index.html')) && /const emailB64 = "[A-Za-z0-9+/=]+"/.test(a.read('index.html')));
 
   // 5. Sprachumschalter und hreflang: Gegenstücke verweisen aufeinander
-  const pairs = [['index.html', 'en/index.html', '/', '/en/'], ['cv.html', 'en/cv.html', '/cv.html', '/en/cv.html'], ['tools/index.html', 'en/tools/index.html', '/tools/', '/en/tools/'], ['datenschutz.html', 'en/privacy.html', '/datenschutz.html', '/en/privacy.html']];
+  const pairs = [['index.html', 'en/index.html', '/', '/en/'], ['cv.html', 'en/cv.html', '/cv', '/en/cv'], ['tools/index.html', 'en/tools/index.html', '/tools/', '/en/tools/'], ['datenschutz.html', 'en/privacy.html', '/datenschutz', '/en/privacy']];
   for (const [de, en, deUrl, enUrl] of pairs) {
     ok('Umschalter DE → EN: ' + de, a.read(de).includes('href="' + enUrl + '" hreflang="en"'));
     ok('Umschalter EN → DE: ' + en, a.read(en).includes('href="' + deUrl + '" hreflang="de"'));
@@ -105,7 +113,10 @@ try {
   // 6. Feeds, Sitemap, robots.txt
   const locsA = common('A', A);
   const liveLocs = [...new JSDOM(fs.readFileSync(path.join(__dirname, 'referenz', 'live', 'sitemap.xml'), 'utf8'), { contentType: 'application/xml' }).window.document.getElementsByTagName('loc')].map(l => l.textContent);
-  for (const loc of liveLocs) ok('Sitemap enthält weiterhin: ' + loc, locsA.includes(loc));
+  // Frühere .html-Adressen erscheinen unter der Adresse, auf die _redirects weiterleitet
+  const served = loc => { const p = loc.replace('https://josija-nydegger.ch', ''); return redirects.has(p) ? 'https://josija-nydegger.ch' + redirects.get(p).to : loc; };
+  for (const loc of liveLocs) ok('Sitemap enthält weiterhin: ' + served(loc), locsA.includes(served(loc)));
+  ok('Sitemap ohne .html-Adressen', !locsA.some(l => l.endsWith('.html')));
   ok('Sitemap ohne 404 und Google-Datei', !locsA.some(l => /404|google/.test(l)));
   ok('robots.txt verweist auf Sitemap', a.has('robots.txt') && a.read('robots.txt').trim() === 'Sitemap: https://josija-nydegger.ch/sitemap.xml');
   ok('Kein KaTeX-Stylesheet ohne Formeln', !generated.some(p => a.read(p).includes('katex.min.css')));
@@ -155,7 +166,7 @@ try {
     const html = a.read(p);
     ok('Statistik genau einmal eingebunden: ' + p, html.split(UMAMI).length === 2);
     ok('Kein weiteres externes Skript: ' + p, !/<script[^>]+src="(https?:)?\/\//.test(html.replace(UMAMI, '')));
-    ok('Datenschutz in der Fusszeile: ' + p, /<footer[\s\S]*href="\/(datenschutz|en\/privacy)\.html"[\s\S]*<\/footer>/.test(html));
+    ok('Datenschutz in der Fusszeile: ' + p, /<footer[\s\S]*href="\/(datenschutz|en\/privacy)"[\s\S]*<\/footer>/.test(html));
   }
   ok('Google-Bestätigung unverändert ohne Statistik', !a.read(builtA.find(p => /^google[0-9a-f]+\.html$/.test(p))).includes('umami'));
   ok('Statistik: ohne ? und # der Adresse (Eingaben der Tools), nur auf der eigenen Domain', ['data-exclude-hash="true"', 'data-exclude-search="true"', 'data-domains="josija-nydegger.ch"'].every(x => UMAMI.includes(x)));
@@ -165,7 +176,7 @@ try {
   ok('Event: Lebenslauf als PDF', ['cv.html', 'en/cv.html'].every(p => a.read(p).includes('data-umami-event="Lebenslauf als PDF"')));
   ok('Event: Übergabe ans Balken-Tool', a.read('tools/lastkombinationen/index.html').includes('window.umami.track("Ins Balken-Tool übernommen")'));
   ok('Datenschutz: E-Mail kodiert eingebunden', ['datenschutz.html', 'en/privacy.html'].every(p => a.read(p).includes('<a class="email"></a>')));
-  ok('Datenschutz: in der Sitemap', ['/datenschutz.html', '/en/privacy.html'].every(u => locsA.includes('https://josija-nydegger.ch' + u)));
+  ok('Datenschutz: in der Sitemap', ['/datenschutz', '/en/privacy'].every(u => locsA.includes('https://josija-nydegger.ch' + u)));
 } catch (e) { ok('A: Prüfung ohne Absturz', false, e.message); }
 
 // ===== B) Testbeiträge =====

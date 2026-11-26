@@ -4,10 +4,10 @@ import type { Lang } from './i18n';
 
 export const pages = {
   home: { de: '/', en: '/en/' },
-  cv: { de: '/cv.html', en: '/en/cv.html' },
+  cv: { de: '/cv', en: '/en/cv' },
   tools: { de: '/tools/', en: '/en/tools/' },
   blog: { de: '/blog/', en: '/en/blog/' },
-  privacy: { de: '/datenschutz.html', en: '/en/privacy.html' }
+  privacy: { de: '/datenschutz', en: '/en/privacy' }
 } as const satisfies Record<string, Partial<Record<Lang, string>>>;
 
 export type PageRef = keyof typeof pages;
