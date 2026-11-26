@@ -15,7 +15,8 @@ const UMAMI = '<script defer src="https://cloud.umami.is/script.js" data-website
 const ASTRO = path.join(ROOT, 'node_modules', 'astro', 'bin', 'astro.mjs');
 
 // Adressen der bisherigen Website (referenz/dateien.txt), die bewusst entfallen sind (siehe _notizen/astro-migration.md)
-const REMOVED = ['assets/katex/katex.min.js', 'assets/katex/contrib/auto-render.min.js'];
+// CNAME: nur für GitHub Pages, seit dem Umzug auf Cloudflare und dem Umbenennen des Repos (November 2026) entfernt
+const REMOVED = ['assets/katex/katex.min.js', 'assets/katex/contrib/auto-render.min.js', 'CNAME'];
 
 function build(env = {}) {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'site-'));
@@ -72,7 +73,7 @@ try {
   const builtA = walk(A);
 
   // 1. Alle wichtigen Seiten entstehen
-  for (const p of ['index.html', 'cv.html', 'en/index.html', 'en/cv.html', 'tools/index.html', 'en/tools/index.html', 'feed.xml', 'en/feed.xml', 'sitemap.xml', 'robots.txt', '404.html', 'CNAME', 'datenschutz.html', 'en/privacy.html'])
+  for (const p of ['index.html', 'cv.html', 'en/index.html', 'en/cv.html', 'tools/index.html', 'en/tools/index.html', 'feed.xml', 'en/feed.xml', 'sitemap.xml', 'robots.txt', '404.html', 'datenschutz.html', 'en/privacy.html'])
     ok('Seite gebaut: ' + p, a.has(p));
 
   // 2. Keine Adresse der bisherigen Website geht verloren

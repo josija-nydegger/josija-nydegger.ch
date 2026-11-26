@@ -1,7 +1,7 @@
 # Anleitung: Arbeit als PDF auf der Website veröffentlichen
 
 Website: <https://josija-nydegger.ch>
-Repository: `josija-nydegger/josija-nydegger.github.io`
+Repository: `josija-nydegger/josija-nydegger.ch`
 
 ## 1. PDF vorbereiten
 
