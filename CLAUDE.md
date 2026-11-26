@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Persönliche Website von Josija Nydegger (Bauingenieurwesen, BIM, Digital Construction).
-Live: <https://josija-nydegger.ch> · gebaut mit [Astro](https://astro.build) (statisch), veröffentlicht per GitHub Action auf GitHub Pages. Bis Oktober 2026 Jekyll; Ablauf und Entscheide des Wechsels: `_notizen/astro-migration.md`.
+Live: <https://josija-nydegger.ch> · gebaut mit [Astro](https://astro.build) (statisch), veröffentlicht per GitHub Action auf Cloudflare Workers (statische Dateien, seit November 2026; vorher GitHub Pages). Bis Oktober 2026 Jekyll; Ablauf und Entscheide des Wechsels: `_notizen/astro-migration.md`.
 
 **Domain:** `josija-nydegger.ch`, registriert bei Infomaniak (dort auch DNS, DNSSEC aktiv). DNS: 4× A und 4× AAAA für `@` auf die GitHub-Pages-Adressen, CNAME `www` → `josija-nydegger.github.io`, TXT `_github-pages-challenge-josija-nydegger` (Domain in GitHub bestätigt). Die übrigen Einträge (MX, SPF, DKIM, DMARC, SRV, autoconfig) sind für E-Mail und bleiben. Die Datei `public/CNAME` enthält die Domain: **nicht löschen**. In den Repo-Einstellungen steht Pages → Source auf **"GitHub Actions"** (nicht "Deploy from a branch"). Alte Adressen unter `josija-nydegger.github.io` leiten automatisch auf die Domain um. Absolute Adressen immer mit `https://josija-nydegger.ch` schreiben (bzw. `absoluteUrl()` aus `src/data/site.ts`). Falls die DNS-Verwaltung je umzieht: DNSSEC vorher ausschalten.
 
@@ -18,6 +18,8 @@ Live: <https://josija-nydegger.ch> · gebaut mit [Astro](https://astro.build) (s
 
 ```
 astro.config.mjs     Astro: Domain, Ausgabeformat 'preserve', Markdown (remark/rehype, KaTeX, Typografie)
+wrangler.jsonc       Cloudflare Workers: Name, Domain, statische Dateien aus dist/
+_cloudflare/worker.js  Ordner-Adressen und 404 wie bei GitHub Pages (siehe "Cloudflare")
 package.json         Abhängigkeiten (exakte Versionen) und Befehle: dev, build, preview, check, test
 .github/workflows/deploy.yml  Bauen, prüfen und veröffentlichen (siehe "Prüfen")
 src/
@@ -50,7 +52,7 @@ public/              Wird unverändert veröffentlicht
   images/            profil.jpg, og-image.jpg, projekte/ für Projekt-Icons, blog/ für Beitragsbilder
   arbeiten/          PDFs von Arbeiten (Projekt-, Bachelorarbeiten), nur im Original
   favicon.svg, favicon.ico (16/32/48), favicon-32.png, apple-touch-icon.png (180×180, randlos dunkelblau, iOS rundet selbst)  Website-Symbol "Statik & Code", Quelle: G:\Meine Ablage\personal_website\favicon 3.0
-  CNAME              Eigene Domain für GitHub Pages (nicht löschen)
+  CNAME              Eigene Domain für GitHub Pages, hält die Umleitung von github.io aufrecht (nicht löschen)
   robots.txt         Verweis auf die Sitemap
   google385c59b71b73dd03.html  Bestätigung Google Search Console
 _drafts/vorlage.md   Vorlage für neue Beiträge (nicht veröffentlicht)
@@ -165,7 +167,7 @@ Status: **umgesetzt** (Oktober 2026).
 - **Lokal ansehen:** `npm run dev` (Vorschau unter <http://localhost:4321>, lädt bei Änderungen neu). Fertigen Build ansehen: `npm run build`, dann `npm run preview`.
 - **Vor jedem Commit:** `npm run check` (Typen) und `npm test`. Prüft die Rechenkerne der Tools gegen Formeln, Tabellenwerte und eine FE-Rechnung, den Einheiten-Umrechner gegen bekannte Umrechnungen und baut die Website zweimal (mit den echten Inhalten und mit den Testbeiträgen aus `_tests/fixtures/blog`): alle Seiten, keine Adresse der früheren Website fehlt, E-Mail nicht im Klartext, Sprachumschalter, interne Links, Feeds, Sitemap, Formeln, Datum, Lesezeit. Details: `_tests/README.md`.
 - Neue Tools bekommen eine eigene Testdatei in `_tests/` und einen Eintrag im `test`-Skript von `package.json`. Ändert sich eine Blog-Funktion, Testbeitrag und Prüfung gemeinsam anpassen.
-- **Veröffentlichen:** Push auf `main` startet `.github/workflows/deploy.yml` (Typen, Tests, Build, Veröffentlichung, ca. 1–2 Minuten). Schlägt ein Schritt fehl, bleibt die bisherige Website online; Fehler stehen im Tab **Actions** des Repos. Pull Requests werden nur gebaut und geprüft. Nach Änderungen an Domain oder DNS: `node _tests/live-pruefung.js`.
+- **Veröffentlichen:** Push auf `main` startet `.github/workflows/deploy.yml` (Typen, Tests, Build, Veröffentlichung auf Cloudflare, ca. 1–2 Minuten). Schlägt ein Schritt fehl, bleibt die bisherige Website online; Fehler stehen im Tab **Actions** des Repos. Pull Requests werden nur gebaut und geprüft. Nach Änderungen an Domain oder DNS: `node _tests/live-pruefung.js`.
 - **Cache:** Nach Änderungen an den Markdown-Plugins (`astro.config.mjs`, `src/lib/remark-math-extras.mjs`) die Ordner `.astro/` und `node_modules/.astro/` löschen, sonst zeigt Astro Beiträge aus dem Cache.
 - **Abhängigkeiten:** exakte Versionen in `package.json`. Bei einem Update von `katex` auch `katex.min.css` und die `.woff2`-Schriften aus `node_modules/katex/dist/` nach `public/assets/katex/` kopieren und `VERSION.txt` nachführen.
 - Vor dem Commit: Links und Dateinamen auf exakte Schreibweise prüfen, Darstellung auf Handybreite bedenken.
