@@ -76,6 +76,6 @@ All of this has since been fixed. My takeaway: AI is a huge accelerator, but the
 
 ## Try it
 
-You can open the receiver directly on your phone: [QR-Reader](https://josija-nydegger.ch/QR-tool/QR-Reader.html). Open the sender on your laptop: [QR-Streamer](https://josija-nydegger.ch/QR-tool/QR-Streamer.html). You can also save the file and open it offline with a double-click. All the code is on [GitHub](https://github.com/josija-nydegger/QR-tool).
+You can open the receiver directly on your phone: [QR-Reader](https://josija-nydegger.ch/QR-tool/QR-Reader). Open the sender on your laptop: [QR-Streamer](https://josija-nydegger.ch/QR-tool/QR-Streamer). You can also save the file and open it offline with a double-click. All the code is on [GitHub](https://github.com/josija-nydegger/QR-tool).
 
 Next, I want to make the receiver even faster and add support for whole files, not just text.

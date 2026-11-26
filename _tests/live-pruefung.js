@@ -17,17 +17,27 @@ const get = (url, opts = {}) => fetch(url, { redirect: 'manual', headers: BROWSE
 
 (async () => {
   const rows = fs.readFileSync(path.join(__dirname, 'referenz', 'dateien.txt'), 'utf8').split('\n').filter(l => l && !l.startsWith('#')).map(l => l.split('\t'));
+  // Frühere Adressen: direkt 200 oder über eine Weiterleitung (seite.html → /seite, ordner/index.html → /ordner/) auf 200
   for (const [url, file] of rows) {
     const res = await get(SITE + encodeURI(url));
-    if (REMOVED.includes(file)) ok('Bewusst entfernt (404): ' + url, res.status === 404, res.status);
-    else ok('200: ' + url, res.status === 200, res.status);
+    if (REMOVED.includes(file)) { ok('Bewusst entfernt (404): ' + url, res.status === 404, res.status); continue; }
+    if (res.status === 200) { ok('200: ' + url, true); continue; }
+    const to = res.headers.get('location');
+    const end = to ? await get(new URL(to, SITE)) : null;
+    ok(`${res.status} → ${to} → 200: ${url}`, [301, 307, 308].includes(res.status) && end?.status === 200, res.status + ' ' + to + ' ' + end?.status);
   }
 
-  const google = await get(SITE + '/google385c59b71b73dd03.html');
-  ok('Google-Bestätigung unter .html', google.status === 200 && (await google.text()).trim() === 'google-site-verification: google385c59b71b73dd03.html');
-  ok('/cv ohne .html', (await get(SITE + '/cv')).status === 200);
+  // Seiten ohne .html; die früheren Adressen leiten dauerhaft (301) weiter
+  for (const p of ['/cv', '/en/cv', '/datenschutz', '/en/privacy', '/QR-tool/QR-Reader', '/QR-tool/QR-Streamer']) {
+    ok('200: ' + p, (await get(SITE + p)).status === 200);
+    const old = await get(SITE + p + '.html');
+    ok(`${p}.html → 301 ${p}`, old.status === 301 && old.headers.get('location')?.replace(SITE, '') === p, old.status + ' ' + old.headers.get('location'));
+  }
+  // Google-Bestätigung: Cloudflare leitet auf die Adresse ohne .html weiter, dort derselbe Inhalt
+  const google = await fetch(SITE + '/google385c59b71b73dd03.html', { headers: BROWSER });
+  ok('Google-Bestätigung erreichbar', google.status === 200 && (await google.text()).trim() === 'google-site-verification: google385c59b71b73dd03.html');
   const en = await get(SITE + '/en');
-  ok('/en → /en/', en.status === 301 && en.headers.get('location') === SITE + '/en/', en.status + ' ' + en.headers.get('location'));
+  ok('/en → /en/', [301, 307, 308].includes(en.status) && en.headers.get('location')?.replace(SITE, '') === '/en/', en.status + ' ' + en.headers.get('location'));
   const www = await get('https://www.josija-nydegger.ch/');
   ok('www → ohne www', [301, 308].includes(www.status) && www.headers.get('location').startsWith(SITE + '/'), www.status + ' ' + www.headers.get('location'));
   const http = await get('http://josija-nydegger.ch/');

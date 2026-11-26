@@ -6,7 +6,7 @@ import Seo from '../components/Seo.astro';
 import PersonJsonLd from '../components/PersonJsonLd.astro';
 import Umami from '../components/Umami.astro';
 import { i18n, otherLang, type Lang } from '../data/i18n';
-import { site, absoluteUrl } from '../data/site';
+import { site, absoluteUrl, pagePath } from '../data/site';
 import { counterpartUrl, type Post } from '../lib/posts';
 
 interface Props {
@@ -24,7 +24,7 @@ const tOther = i18n[other];
 // Sprachumschalter: Gegenstück, sonst Startseite der anderen Sprache (bei Beiträgen deren Blog-Übersicht)
 const otherUrl = await counterpartUrl(ref, lang);
 const switchUrl = otherUrl ?? (post ? tOther.blogUrl : tOther.homeUrl);
-const path = Astro.url.pathname;
+const path = pagePath(Astro.url.pathname);
 const deUrl = lang === 'de' ? path : otherUrl;
 ---
 <!doctype html>

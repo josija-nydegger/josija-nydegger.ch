@@ -4,7 +4,7 @@
 // englische Startseite mit englischem Untertitel. Kein og:image ausser bei Beiträgen mit "image:",
 // damit WhatsApp, Teams usw. das Website-Symbol zeigen.
 import { i18n, type Lang } from '../data/i18n';
-import { site, absoluteUrl } from '../data/site';
+import { site, absoluteUrl, pagePath } from '../data/site';
 import { xmlDate, type Post } from '../lib/posts';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 }
 const { lang, title, description = site.description, post } = Astro.props;
 const t = i18n[lang];
-const path = Astro.url.pathname;
+const path = pagePath(Astro.url.pathname);
 const url = absoluteUrl(path);
 const image = post?.image ? absoluteUrl(post.image) : undefined;
 const published = post ? xmlDate(post.date) : undefined;

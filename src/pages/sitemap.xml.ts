@@ -9,13 +9,14 @@ import { getPosts, xmlDate } from '../lib/posts';
 // Statische Dateien, die nicht in die Sitemap gehören
 const EXCLUDE = [/^google[0-9a-f]+\.html$/, /^404\.html$/];
 
-const toUrl = (file: string) => '/' + file.replace(/(^|\/)index\.html$/, '$1');
+// Adressen wie Cloudflare sie ausliefert: ordner/index.html → /ordner/, seite.html → /seite
+const toUrl = (file: string) => '/' + file.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '');
 
 function pageUrls(): string[] {
   return Object.keys(import.meta.glob('./**/*.astro'))
     .map(k => k.slice(2, -'.astro'.length))
     .filter(p => !p.includes('[') && p !== '404')
-    .map(p => (p === 'index' || p.endsWith('/index') ? '/' + p.slice(0, -'index'.length) : `/${p}.html`));
+    .map(p => (p === 'index' || p.endsWith('/index') ? '/' + p.slice(0, -'index'.length) : `/${p}`));
 }
 
 function staticUrls(dir = path.join(process.cwd(), 'public'), base = ''): string[] {

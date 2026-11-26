@@ -27,5 +27,8 @@ export const site = {
   ]
 } as const;
 
-/** Absolute Adresse aus einem Pfad, z. B. absoluteUrl('/cv.html') */
+/** Absolute Adresse aus einem Pfad, z. B. absoluteUrl('/cv') */
 export const absoluteUrl = (path: string) => site.url + path;
+
+/** Adresse einer Seite ohne .html (Astro baut cv.html, Cloudflare liefert sie unter /cv aus) */
+export const pagePath = (pathname: string) => pathname.replace(/.html$/, '');

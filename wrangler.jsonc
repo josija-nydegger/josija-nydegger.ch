@@ -1,18 +1,15 @@
-// Cloudflare Workers: veröffentlicht den Astro-Build (dist/) als statische Dateien.
+// Cloudflare Workers: veröffentlicht den Astro-Build (dist/) als statische Dateien, ohne eigenen Worker-Code.
 // Veröffentlichen: per GitHub Action (.github/workflows/deploy.yml) bei jedem Push auf main.
+// Cloudflare liefert cv.html unter /cv aus (/cv.html → /cv) und ordner/index.html unter /ordner/ (/ordner → /ordner/),
+// unbekannte Adressen bekommen 404.html. Alte Adressen mit .html leitet public/_redirects mit 301 weiter.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "josija-nydegger",
-  "main": "_cloudflare/worker.js",
   "compatibility_date": "2026-11-10",
   "assets": {
     "directory": "./dist",
-    "binding": "ASSETS",
-    // Adressen genau wie gebaut: /cv.html bleibt /cv.html (Ordner-Adressen regelt _cloudflare/worker.js)
-    "html_handling": "none",
-    // "none", nicht "404-page": sonst beantwortet Cloudflare Seitenaufrufe von Browsern
-    // (Sec-Fetch-Mode: navigate) ohne passende Datei selbst mit 404.html, ohne den Worker
-    "not_found_handling": "none"
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
   },
   // Eigene Domain; www leitet eine Redirect-Regel der Zone auf die Domain ohne www um
   "routes": [{ "pattern": "josija-nydegger.ch", "custom_domain": true }],
