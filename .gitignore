@@ -5,4 +5,6 @@ dist/
 
 # Lizenzierte Normen (SIA): nur lokal, nie veröffentlichen
 _normen/
+
+# Cloudflare: lokaler Zustand von wrangler dev
 .wrangler/
