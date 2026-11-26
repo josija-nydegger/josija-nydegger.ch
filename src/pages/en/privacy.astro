@@ -6,10 +6,10 @@ import Base from '../../layouts/Base.astro';
   lang="en"
   ref="privacy"
   title="Privacy"
-  description="What data is processed when you visit josija-nydegger.ch: cookie-free visitor statistics with Umami, hosting on GitHub Pages, tools without data transfer."
+  description="What data is processed when you visit josija-nydegger.ch: cookie-free visitor statistics with Umami, hosting on Cloudflare, tools without data transfer."
 >
 <h1 class="page-title">Privacy</h1>
-<p class="page-intro">In short: no cookies, no ads, no tracking across other websites. I count page views anonymously to see which content and tools are used.</p>
+<p class="page-intro">In short: no cookies for statistics or advertising, no ads, no tracking across other websites. I count page views anonymously to see which content and tools are used.</p>
 
 <section>
   <h2>Controller</h2>
@@ -32,7 +32,13 @@ import Base from '../../layouts/Base.astro';
 
 <section>
   <h2>Hosting</h2>
-  <p>The website is hosted on <a href="https://pages.github.com">GitHub Pages</a> (GitHub, Inc., USA). For every page request, GitHub processes technically necessary data such as IP address, time and requested address, among other things for the security of the service. Details are in <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>.</p>
+  <p>The website and the domain's DNS records are hosted by <a href="https://www.cloudflare.com">Cloudflare</a> (Cloudflare, Inc., USA). Cloudflare delivers the pages through a worldwide network of data centers, usually from one near you. For every page request, Cloudflare processes technically necessary data such as IP address, time, requested address and browser details, among other things to fend off attacks. Requests may be logged for up to 7 days; I only look at these logs when troubleshooting. Cloudflare normally sets no cookies; only if a request looks suspicious and Cloudflare shows a security check may a technically necessary cookie be set. Input in the tools (after the <code>#</code>) is never sent to the server by your browser, so it never reaches Cloudflare either. Details are in <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's privacy policy</a>.</p>
+  <p>The website's source code is public on <a href="https://github.com/josija-nydegger/josija-nydegger.ch">GitHub</a>. Visiting the website does not contact GitHub.</p>
+</section>
+
+<section>
+  <h2>Email</h2>
+  <p>If you send me an email, it is stored by my email provider <a href="https://www.infomaniak.com/en">Infomaniak</a> (Infomaniak Network SA, Geneva, Switzerland). I only use your message and address to reply to you.</p>
 </section>
 
 <section>
@@ -42,7 +48,12 @@ import Base from '../../layouts/Base.astro';
 
 <section>
   <h2>External links</h2>
-  <p>Links to other websites (e.g. LinkedIn, GitHub) take you to their services, where their privacy policies apply. This website itself does not embed content from other providers, not even fonts.</p>
+  <p>Links to other websites (e.g. LinkedIn, GitHub) take you to their services, where their privacy policies apply. This website itself does not embed content from other providers, not even fonts. The only exception is the QR-Reader (see below).</p>
+</section>
+
+<section>
+  <h2>QR-Reader and QR-Streamer</h2>
+  <p>The two pages under <code>/QR-tool/</code> come from my project <a href="https://github.com/josija-nydegger/QR-tool">QR-tool</a>. The QR-Reader loads code libraries (zbar-wasm, marked, DOMPurify, KaTeX) from the <a href="https://www.jsdelivr.com">jsDelivr</a> service; jsDelivr and its network operators receive your IP address and browser details (see <a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr's privacy policy</a>). The camera is only used with your permission; images are analyzed in your browser and not transmitted. These two pages are not counted in the visitor statistics.</p>
 </section>
 
 <section>

@@ -7,10 +7,10 @@ import Base from '../layouts/Base.astro';
   lang="de"
   ref="privacy"
   title="Datenschutz"
-  description="Welche Daten beim Besuch von josija-nydegger.ch anfallen: Besucherstatistik ohne Cookies mit Umami, Hosting bei GitHub Pages, Tools ohne Datenübertragung."
+  description="Welche Daten beim Besuch von josija-nydegger.ch anfallen: Besucherstatistik ohne Cookies mit Umami, Hosting bei Cloudflare, Tools ohne Datenübertragung."
 >
 <h1 class="page-title">Datenschutz</h1>
-<p class="page-intro">Kurz gesagt: keine Cookies, keine Werbung, kein Tracking über andere Websites hinweg. Ich zähle Seitenaufrufe anonym, um zu sehen, welche Inhalte und Tools genutzt werden.</p>
+<p class="page-intro">Kurz gesagt: keine Cookies für Statistik oder Werbung, keine Werbung, kein Tracking über andere Websites hinweg. Ich zähle Seitenaufrufe anonym, um zu sehen, welche Inhalte und Tools genutzt werden.</p>
 
 <section>
   <h2>Verantwortlich</h2>
@@ -33,7 +33,13 @@ import Base from '../layouts/Base.astro';
 
 <section>
   <h2>Hosting</h2>
-  <p>Die Website liegt bei <a href="https://pages.github.com">GitHub Pages</a> (GitHub, Inc., USA). Beim Aufruf jeder Seite verarbeitet GitHub technisch notwendige Daten wie IP-Adresse, Zeitpunkt und aufgerufene Adresse, unter anderem zur Sicherheit des Dienstes. Details stehen in der <a href="https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement">Datenschutzerklärung von GitHub</a>.</p>
+  <p>Die Website und die DNS-Einträge der Domain liegen bei <a href="https://www.cloudflare.com">Cloudflare</a> (Cloudflare, Inc., USA). Cloudflare liefert die Seiten über ein weltweites Netz von Rechenzentren aus, in der Regel aus einem in deiner Nähe. Beim Aufruf jeder Seite verarbeitet Cloudflare technisch notwendige Daten wie IP-Adresse, Zeitpunkt, aufgerufene Adresse und Browserangaben, unter anderem um Angriffe abzuwehren. Zugriffe können bis zu 7 Tage protokolliert werden; ich sehe diese Protokolle nur bei der Fehlersuche an. Normalerweise setzt Cloudflare keine Cookies; nur wenn ein Zugriff verdächtig wirkt und Cloudflare eine Sicherheitsprüfung anzeigt, kann ein technisch notwendiges Cookie gesetzt werden. Eingaben in den Tools (nach dem <code>#</code>) sendet der Browser nie an den Server, sie kommen also auch bei Cloudflare nicht an. Details stehen in der <a href="https://www.cloudflare.com/de-de/privacypolicy/">Datenschutzerklärung von Cloudflare</a>.</p>
+  <p>Der Quellcode der Website liegt öffentlich auf <a href="https://github.com/josija-nydegger/josija-nydegger.ch">GitHub</a>. Beim Besuch der Website wird GitHub nicht kontaktiert.</p>
+</section>
+
+<section>
+  <h2>E-Mail</h2>
+  <p>Wenn du mir eine E-Mail schreibst, liegt sie bei meinem E-Mail-Anbieter <a href="https://www.infomaniak.com/de">Infomaniak</a> (Infomaniak Network SA, Genf, Schweiz). Ich verwende deine Nachricht und Adresse nur, um dir zu antworten.</p>
 </section>
 
 <section>
@@ -43,7 +49,12 @@ import Base from '../layouts/Base.astro';
 
 <section>
   <h2>Externe Links</h2>
-  <p>Links zu anderen Websites (z. B. LinkedIn, GitHub) öffnen deren Angebot; dort gelten deren Datenschutzbestimmungen. Auf dieser Website selbst sind keine Inhalte anderer Anbieter eingebettet, auch keine Schriften.</p>
+  <p>Links zu anderen Websites (z. B. LinkedIn, GitHub) öffnen deren Angebot; dort gelten deren Datenschutzbestimmungen. Auf dieser Website selbst sind keine Inhalte anderer Anbieter eingebettet, auch keine Schriften. Einzige Ausnahme ist der QR-Reader (siehe unten).</p>
+</section>
+
+<section>
+  <h2>QR-Reader und QR-Streamer</h2>
+  <p>Die beiden Seiten unter <code>/QR-tool/</code> stammen aus meinem Projekt <a href="https://github.com/josija-nydegger/QR-tool">QR-tool</a>. Der QR-Reader lädt dafür Programmbibliotheken (zbar-wasm, marked, DOMPurify, KaTeX) vom Dienst <a href="https://www.jsdelivr.com">jsDelivr</a>; dabei erhält jsDelivr bzw. dessen Netzbetreiber deine IP-Adresse und Browserangaben (siehe <a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">Datenschutzerklärung von jsDelivr</a>). Die Kamera wird nur nach deiner Zustimmung genutzt; die Bilder werden in deinem Browser ausgewertet und nicht übertragen. Diese beiden Seiten werden nicht in der Besucherstatistik gezählt.</p>
 </section>
 
 <section>
