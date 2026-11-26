@@ -8,6 +8,8 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const { JSDOM } = require('jsdom');
+// E-Mail kodiert, wie in src/data/site.ts (für die Prüfung der Suche)
+const siteEmailB64 = fs.readFileSync(path.join(__dirname, '..', 'src', 'data', 'site.ts'), 'utf8').match(/emailB64: '([^']+)'/)[1];
 
 const ROOT = path.join(__dirname, '..');
 // Besucherstatistik, gleiche Zeile wie src/components/Umami.astro und in den Tools unter public/tools/
@@ -64,7 +66,13 @@ function common(label, out) {
     let entries = [];
     try { entries = JSON.parse(el ? el.textContent : ''); } catch (e) { /* unten als Fehler gemeldet */ }
     ok(`${label}: Suche hat einen Index (${p})`, entries.length > 0 && !!doc.querySelector('dialog.search') && !!doc.querySelector('.search-button[hidden]'));
+    const acts = ['copy-link', 'cv-pdf', 'theme-light', 'theme-dark', 'theme-system', 'mail', 'copy-mail'];
+    ok(`${label}: Suche hat alle Schnellaktionen, zuoberst (${p})`, acts.every((x, i) => entries[i] && entries[i].a === x));
+    const dlg = doc.querySelector('dialog.search');
+    ok(`${label}: Suche kennt die E-Mail nur kodiert (${p})`, !!dlg && dlg.dataset.mail === siteEmailB64 && !dlg.outerHTML.includes('@'));
     for (const e of entries) {
+      if (e.a) { ok(`${label}: Schnellaktion ohne Adresse: ${e.a} (${p})`, typeof e.t === 'string' && e.t && !e.u); continue; }
+      if (e.x) { ok(`${label}: Externer Link aus site.ts: ${e.u} (${p})`, /^https:\/\/(www\.linkedin\.com|github\.com)\//.test(e.u)); continue; }
       ok(`${label}: Suchziel vorhanden: ${e.u} (${p})`, typeof e.t === 'string' && e.t && exists(e.u));
       const hash = e.u.split('#')[1];
       if (hash) ok(`${label}: Suchziel-Abschnitt #${hash} vorhanden (${p})`, !!doc.getElementById(hash));

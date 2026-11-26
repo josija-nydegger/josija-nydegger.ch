@@ -41,7 +41,10 @@ export const i18n = {
     kindPage: 'Seite',
     kindSection: 'Abschnitt',
     kindTool: 'Tool',
-    kindPost: 'Beitrag'
+    kindPost: 'Beitrag',
+    kindAction: 'Aktion',
+    copied: 'Kopiert',
+    copyFailed: 'Kopieren nicht möglich'
   },
   en: {
     name: 'English',
@@ -79,7 +82,10 @@ export const i18n = {
     kindPage: 'Page',
     kindSection: 'Section',
     kindTool: 'Tool',
-    kindPost: 'Post'
+    kindPost: 'Post',
+    kindAction: 'Action',
+    copied: 'Copied',
+    copyFailed: 'Copying not possible'
   }
 } as const satisfies Record<Lang, Record<string, string>>;
 

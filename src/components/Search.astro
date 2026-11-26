@@ -1,10 +1,12 @@
 ---
-// Suche (Strg/⌘ K, "/" oder Suchfeld oben rechts): durchsucht Seiten, Tools und Beiträge der eigenen Sprache.
+// Suche (Strg/⌘ K, "/" oder Suchknopf oben rechts): durchsucht Seiten, Tools und Beiträge der eigenen Sprache
+// und bietet Schnellaktionen (Link kopieren, Lebenslauf als PDF, Farbschema, E-Mail, LinkedIn/GitHub).
 // Der Index wird beim Build als JSON in die Seite geschrieben; gesucht wird nur im Browser, nichts wird gesendet.
 // Eingebunden in src/layouts/Base.astro. Ohne JavaScript bleibt das Suchfeld ausgeblendet.
 import { i18n, type Lang } from '../data/i18n';
 import { tools } from '../data/tools';
 import { getPosts } from '../lib/posts';
+import { site } from '../data/site';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -13,8 +15,35 @@ const de = lang === 'de';
 const base = de ? '' : '/en';
 const home = t.homeUrl;
 
-// t = Titel, d = Beschreibung, u = Adresse, k = Art, s = weitere Suchbegriffe (nicht angezeigt)
-type Entry = { t: string; d: string; u: string; k: string; s?: string };
+// t = Titel, d = Beschreibung, u = Adresse, k = Art, s = weitere Suchbegriffe (nicht angezeigt),
+// a = Schnellaktion (statt Adresse, ausgeführt im Skript unten), x = Adresse in neuem Tab öffnen
+type Entry = { t: string; d: string; u?: string; k: string; s?: string; a?: string; x?: boolean };
+const social = (host: string) => site.social.find(u => u.includes(host))!;
+const A = t.kindAction;
+// Schnellaktionen stehen zuoberst, solange nichts eingegeben ist
+const actions: Entry[] = de
+  ? [
+      { t: 'Link zu dieser Seite kopieren', d: 'Adresse in die Zwischenablage', a: 'copy-link', k: A, s: 'url teilen share' },
+      { t: 'Lebenslauf als PDF speichern', d: 'Öffnet den Lebenslauf und den Druckdialog', a: 'cv-pdf', k: A, s: 'cv drucken print download' },
+      { t: 'Helles Farbschema', d: 'Hell, unabhängig von der Geräteeinstellung', a: 'theme-light', k: A, s: 'hell light theme modus' },
+      { t: 'Dunkles Farbschema', d: 'Dunkel, unabhängig von der Geräteeinstellung', a: 'theme-dark', k: A, s: 'dunkel dark mode nacht theme' },
+      { t: 'Farbschema wie das Gerät', d: 'Folgt der Systemeinstellung', a: 'theme-system', k: A, s: 'system auto theme modus' },
+      { t: 'E-Mail schreiben', d: 'Öffnet das Mailprogramm', a: 'mail', k: A, s: 'email mail kontakt' },
+      { t: 'E-Mail-Adresse kopieren', d: 'Adresse in die Zwischenablage', a: 'copy-mail', k: A, s: 'email mail kontakt' },
+      { t: 'LinkedIn', d: 'Profil auf LinkedIn (neuer Tab)', u: social('linkedin'), x: true, k: A, s: 'kontakt' },
+      { t: 'GitHub', d: 'Code und Projekte auf GitHub (neuer Tab)', u: social('github'), x: true, k: A, s: 'code' }
+    ]
+  : [
+      { t: 'Copy link to this page', d: 'Copy the address to the clipboard', a: 'copy-link', k: A, s: 'url share' },
+      { t: 'Save CV as PDF', d: 'Opens the CV and the print dialog', a: 'cv-pdf', k: A, s: 'resume print download' },
+      { t: 'Light mode', d: 'Light, regardless of the device setting', a: 'theme-light', k: A, s: 'theme color scheme' },
+      { t: 'Dark mode', d: 'Dark, regardless of the device setting', a: 'theme-dark', k: A, s: 'theme color scheme night' },
+      { t: 'Match device color scheme', d: 'Follows the system setting', a: 'theme-system', k: A, s: 'system auto theme mode' },
+      { t: 'Write an email', d: 'Opens your email app', a: 'mail', k: A, s: 'email mail contact' },
+      { t: 'Copy email address', d: 'Copy the address to the clipboard', a: 'copy-mail', k: A, s: 'email mail contact' },
+      { t: 'LinkedIn', d: 'Profile on LinkedIn (new tab)', u: social('linkedin'), x: true, k: A, s: 'contact' },
+      { t: 'GitHub', d: 'Code and projects on GitHub (new tab)', u: social('github'), x: true, k: A, s: 'code' }
+    ];
 const pages: Entry[] = de
   ? [
       { t: 'Start', d: 'Über mich, Arbeiten, Projekte, Kontakt', u: home, k: t.kindPage, s: 'home about' },
@@ -41,9 +70,9 @@ const pages: Entry[] = de
 const toolEntries: Entry[] = tools.map(x => ({ t: x.title[lang], d: x.description[lang], u: x.url, k: t.kindTool, s: x.tags[lang].join(' ') }));
 const postEntries: Entry[] = (await getPosts(lang)).map(p => ({ t: p.title, d: p.description, u: p.url, k: t.kindPost, s: p.tags.join(' ') }));
 // "<" maskieren, damit kein Titel das Skript-Element beenden kann
-const index = JSON.stringify([...pages, ...toolEntries, ...postEntries]).replace(/</g, '\\u003c');
+const index = JSON.stringify([...actions, ...pages, ...toolEntries, ...postEntries]).replace(/</g, '\\u003c');
 ---
-<dialog class="search" aria-label={t.search} data-empty={t.searchEmpty}>
+<dialog class="search" aria-label={t.search} data-empty={t.searchEmpty} data-copied={t.copied} data-copy-failed={t.copyFailed} data-cv={`${base}/cv`} data-mail={site.emailB64}>
   <div class="search-input">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input type="search" placeholder={t.searchPlaceholder} aria-label={t.search} autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="search-list">
@@ -58,7 +87,7 @@ const index = JSON.stringify([...pages, ...toolEntries, ...postEntries]).replace
 <script type="application/json" id="search-index" set:html={index} />
 
 <script>
-  type Entry = { t: string; d: string; u: string; k: string; s?: string };
+  type Entry = { t: string; d: string; u?: string; k: string; s?: string; a?: string; x?: boolean };
   const dialog = document.querySelector<HTMLDialogElement>('dialog.search')!;
   const input = dialog.querySelector('input')!;
   const list = dialog.querySelector<HTMLUListElement>('.search-list')!;
@@ -98,8 +127,15 @@ const index = JSON.stringify([...pages, ...toolEntries, ...postEntries]).replace
       li.id = `search-${i}`;
       li.setAttribute('role', 'option');
       li.setAttribute('aria-selected', String(i === sel));
-      const a = document.createElement('a');
-      a.href = r.u;
+      // Adresse als Link, Schnellaktion als Knopf
+      const a = r.u ? document.createElement('a') : document.createElement('button');
+      if (a instanceof HTMLAnchorElement) {
+        a.href = r.u!;
+        if (r.x) { a.target = '_blank'; a.rel = 'noopener'; }
+      } else {
+        a.type = 'button';
+        a.addEventListener('click', () => run(r, a));
+      }
       a.tabIndex = -1;
       for (const [cls, text] of [['t', r.t], ['k', r.k], ['d', r.d]]) {
         const span = document.createElement('span');
@@ -132,12 +168,46 @@ const index = JSON.stringify([...pages, ...toolEntries, ...postEntries]).replace
     const n = Math.max(1, results.length);
     if (e.key === 'ArrowDown') { e.preventDefault(); sel = (sel + 1) % n; mark(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); sel = (sel - 1 + n) % n; mark(); }
-    else if (e.key === 'Enter' && results[sel]) { e.preventDefault(); dialog.close(); location.href = results[sel].u; }
+    else if (e.key === 'Enter' && results[sel]) {
+      e.preventDefault();
+      const r = results[sel];
+      if (r.a) run(r, list.querySelector<HTMLElement>(`#search-${sel} > *`)!);
+      else if (r.x) { window.open(r.u, '_blank', 'noopener'); dialog.close(); }
+      else { dialog.close(); location.href = r.u!; }
+    }
   });
   // Klick auf den Hintergrund oder auf einen Treffer schliesst
   dialog.addEventListener('click', e => {
     if (e.target === dialog || (e.target as Element).closest('a')) dialog.close();
   });
+
+  // Schnellaktionen
+  const email = () => { try { return atob(dialog.dataset.mail ?? ''); } catch { return ''; } };
+  // Kurze Rückmeldung in der Zeile selbst, dann schliessen
+  function feedback(el: HTMLElement, text: string) {
+    const d = el.querySelector('.d');
+    if (d) d.textContent = text;
+    setTimeout(() => dialog.close(), 700);
+  }
+  async function copy(el: HTMLElement, text: string) {
+    try { await navigator.clipboard.writeText(text); feedback(el, `${dialog.dataset.copied} ✓`); }
+    catch { feedback(el, dialog.dataset.copyFailed ?? ''); }
+  }
+  function run(r: Entry, el: HTMLElement) {
+    if (r.a === 'copy-link') copy(el, location.origin + location.pathname);
+    else if (r.a === 'copy-mail') copy(el, email());
+    else if (r.a === 'mail') { dialog.close(); location.href = 'mailto:' + email(); }
+    else if (r.a === 'cv-pdf') {
+      dialog.close();
+      // Auf dem Lebenslauf direkt drucken, sonst dorthin wechseln (#pdf öffnet dort den Druckdialog, siehe Base.astro)
+      const print = document.querySelector<HTMLButtonElement>('[data-print]');
+      if (print) print.click(); else location.href = `${dialog.dataset.cv}#pdf`;
+    } else if (r.a?.startsWith('theme-')) {
+      // Über die Knöpfe in der Fusszeile, damit die Auswahl gleich gespeichert wird
+      document.querySelector<HTMLButtonElement>(`.theme button[data-theme="${r.a.slice(6)}"]`)?.click();
+      dialog.close();
+    }
+  }
 
   // Strg/⌘ K öffnet und schliesst, "/" öffnet (ausser beim Tippen in einem Feld)
   document.addEventListener('keydown', e => {

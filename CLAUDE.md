@@ -135,7 +135,7 @@ Only what Astro builds from `src/pages/` plus the contents of `public/` is publi
 
 ### Menu
 - Top left on all pages with the `Base` layout: Start (EN: Home) · CV · Tools · Blog, language switch on the right. Active item via `ref` (`home`, `cv`, `tools`, `blog`) or blog post.
-- **Search** (`src/components/Search.astro`): field "Suchen"/"Search" left of the language switch, opens with a click, Ctrl/⌘ K or `/`. The index (pages, home sections, tools, posts of the page's language) is written into each page at build time; searching runs only in the browser, nothing is sent. New pages or home sections that should be findable go into the `pages` list there. Hidden without JavaScript.
+- **Search** (`src/components/Search.astro`): field "Suchen"/"Search" left of the language switch, opens with a click, Ctrl/⌘ K or `/`. The index (pages, home sections, tools, posts of the page's language) is written into each page at build time; searching runs only in the browser, nothing is sent. New pages or home sections that should be findable go into the `pages` list there. Quick actions (listed first): copy page link, save CV as PDF (`/cv#pdf` opens the print dialog), light/dark/system (clicks the footer buttons), write/copy email (from `emailB64`), LinkedIn/GitHub; no Umami events. Hidden without JavaScript.
 - New main pages get their own `ref` in `src/data/pages.ts` and, if they belong in the menu, an entry in `src/components/Nav.astro` (both languages). The CV has no back button; the menu replaces it.
 
 ### CV and structured data

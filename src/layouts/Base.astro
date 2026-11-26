@@ -132,6 +132,11 @@ const deUrl = lang === 'de' ? path : otherUrl;
     window.addEventListener("afterprint", function () { document.title = title; });
     button.addEventListener("click", function () { window.print(); });
     button.hidden = false;
+    // Aus der Suche ("Lebenslauf als PDF speichern"): /cv#pdf öffnet den Druckdialog direkt
+    if (location.hash === "#pdf") {
+      history.replaceState(null, "", location.pathname);
+      window.addEventListener("load", function () { setTimeout(function () { window.print(); }, 100); });
+    }
   })();
 </script>
 </body>
