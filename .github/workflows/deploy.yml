@@ -52,7 +52,7 @@ jobs:
           {
             echo "### Vorschau"
             echo
-            grep -oE 'https://[^ ]+\.workers\.dev[^ ]*' upload.log | sort -u | sed 's/^/- /'
+            grep -oE 'https://[^ ]+\.workers\.dev[^ ]*' upload.log | sort -u | sed 's/^/- /' || echo "- Keine Adresse ausgegeben: Vorschau im Dashboard (Domains → Preview) eingeschaltet?"
             echo
             echo "Geschützt durch Cloudflare Access (Anmeldung mit Code per E-Mail)."
           } >> "$GITHUB_STEP_SUMMARY"
