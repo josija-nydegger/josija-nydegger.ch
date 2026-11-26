@@ -151,6 +151,11 @@ article blockquote { margin: 0 0 14px; padding-left: 14px; border-left: 3px soli
 .page-note { color: var(--muted); font-size: 13px; margin-top: 28px; }
 .item-title a { text-decoration: none; }
 .item-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Lebenslauf: Arbeitgeber im Titel unterstrichen wie Textlinks auf der Startseite */
+@media screen {
+  .item-title a.text-link { text-decoration: underline; text-decoration-color: var(--border); }
+  .item-title a.text-link:hover { text-decoration-color: var(--accent); }
+}
 /* Tool-Übersicht: Titel als erkennbarer Link (unterstrichen wie Textlinks, Pfeil → für interne Seite) */
 .tool-list .item-title a { text-decoration: underline; text-decoration-color: var(--border); }
 .tool-list .item-title a:hover { text-decoration-color: var(--accent); }
