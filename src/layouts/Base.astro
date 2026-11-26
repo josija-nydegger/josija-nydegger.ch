@@ -32,6 +32,7 @@ const deUrl = lang === 'de' ? path : otherUrl;
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <script is:inline>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   <Seo lang={lang} title={title} description={description} post={post} />
   {(ref === 'home' || ref === 'cv') && <PersonJsonLd lang={lang} />}
